@@ -123,11 +123,55 @@ export default function AdminPanel() {
           <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>🏢 Şubeler</div>
           {Object.entries(branches).map(([id, br]) => {
             const brStaff = staffList.filter(s => s.branch === id);
+            const hasCoords = br.lat && br.lng;
             return (
-              <div key={id} style={{ padding: '10px 0', borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>{br.name || br.shortName}</div>
-                <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 3 }}>
-                  {brStaff.map(s => s.name).join(', ') || 'Personel yok'}
+              <div key={id} style={{ padding: '12px 0', borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{br.name || br.shortName}</div>
+                    <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 3 }}>
+                      {brStaff.map(s => s.name).join(', ') || 'Personel yok'}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                    background: hasCoords ? COLORS.greenBg : 'rgba(239,68,68,0.06)',
+                    color: hasCoords ? COLORS.green : COLORS.red,
+                    border: `1px solid ${hasCoords ? COLORS.green : COLORS.red}30`,
+                  }}>
+                    {hasCoords ? '📍 Konum var' : '❌ Konum yok'}
+                  </div>
+                </div>
+                {hasCoords && (
+                  <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 4 }}>
+                    {br.lat.toFixed(6)}, {br.lng.toFixed(6)}
+                  </div>
+                )}
+                <div
+                  onClick={async () => {
+                    if (!navigator.geolocation) { msg('Tarayıcı konum desteklemiyor!'); return; }
+                    navigator.geolocation.getCurrentPosition(
+                      async (pos) => {
+                        try {
+                          await updateDoc(doc(db, 'branches', id), {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude,
+                          });
+                          setBranches(p => ({ ...p, [id]: { ...p[id], lat: pos.coords.latitude, lng: pos.coords.longitude } }));
+                          msg(`✓ ${br.shortName || br.name} konumu kaydedildi!`);
+                        } catch (e) { msg('Kayıt hatası!'); }
+                      },
+                      (err) => { msg('Konum alınamadı! İzin verin.'); },
+                      { enableHighAccuracy: true }
+                    );
+                  }}
+                  style={{
+                    marginTop: 8, background: COLORS.blue, color: COLORS.fioreBeyaz,
+                    borderRadius: 10, padding: '10px', textAlign: 'center',
+                    fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                  }}
+                >
+                  📍 {hasCoords ? 'Konumu Güncelle' : 'Şu An Buradayım — Konum Kaydet'}
                 </div>
               </div>
             );

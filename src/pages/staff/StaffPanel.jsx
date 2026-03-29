@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { COLORS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
+import { calculateDistance } from '../../utils/helpers.js';
 
 const Card = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>{children}</div>;
 const Btn = ({ children, color = COLORS.fioreOrange, disabled = false, onClick }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: 14, padding: '14px', textAlign: 'center', fontWeight: 800, fontSize: 14, width: '100%', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1 }}>{children}</div>;
@@ -16,7 +17,9 @@ export default function StaffPanel() {
   const [sel, setSel] = useState(null);
   const [step, setStep] = useState(null);
   const [cat, setCat] = useState(null);
-  const [gps, setGps] = useState(true);
+  const [gps, setGps] = useState(false);
+  const [gpsDistance, setGpsDistance] = useState(null);
+  const [gpsChecking, setGpsChecking] = useState(true);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
   const [tt, setTt] = useState('success');
@@ -26,7 +29,36 @@ export default function StaffPanel() {
   const branch = userData?.branch === 'gokkusagi' ? 'Gökkuşağı AVM' : 'Forum Kampüs AVM';
   const msg = (m, t = 'success') => { setToast(m); setTt(t); setTimeout(() => setToast(null), 2500); };
 
+  // Müşterileri yükle
   useEffect(() => { getDocs(collection(db, 'customers')).then(snap => { const list = snap.docs.map(d => ({ id: d.id, ...d.data() })); const o = { goat: 0, mudavim: 1, misafir: 2 }; list.sort((a, b) => (o[a.level] || 2) - (o[b.level] || 2) || (b.totalStamps || 0) - (a.totalStamps || 0)); setCustomers(list); }); }, []);
+
+  // GPS kontrolü
+  const checkGPS = async () => {
+    setGpsChecking(true);
+    try {
+      const branchDoc = await getDoc(doc(db, 'branches', userData?.branch));
+      const branchData = branchDoc.data();
+      if (!branchData?.lat || !branchData?.lng) {
+        setGps(true); // Koordinat kaydedilmemişse geçici olarak izin ver
+        setGpsDistance(null);
+        setGpsChecking(false);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, branchData.lat, branchData.lng);
+          const distM = Math.round(dist);
+          setGpsDistance(distM);
+          setGps(distM <= STAMP_CONFIG.gpsRadiusMeters);
+          setGpsChecking(false);
+        },
+        () => { setGps(false); setGpsDistance(null); setGpsChecking(false); msg('Konum alınamadı! İzin verin.', 'error'); },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } catch (e) { setGps(true); setGpsChecking(false); }
+  };
+
+  useEffect(() => { checkGPS(); }, []);
 
   const doStamp = async () => {
     if (!sel || !gps || (sel.currentCard || 0) >= 7 || busy) return;
@@ -126,10 +158,10 @@ export default function StaffPanel() {
       </div>
 
       <div style={{ padding: '0 16px 10px' }}>
-        <div onClick={() => setGps(!gps)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: gps ? COLORS.greenBg : 'rgba(239,68,68,0.06)', border: `1.5px solid ${gps ? COLORS.green : COLORS.red}`, cursor: 'pointer' }}>
-          <span style={{ fontSize: 16 }}>{gps ? '📍' : '❌'}</span>
-          <div><div style={{ fontSize: 12, fontWeight: 700, color: gps ? COLORS.green : COLORS.red }}>{gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gps ? branch : 'İşlem yapılamaz'}</div></div>
-          <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.gray, fontWeight: 600 }}>Test</span>
+        <div onClick={checkGPS} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: gpsChecking ? COLORS.warmGray : gps ? COLORS.greenBg : 'rgba(239,68,68,0.06)', border: `1.5px solid ${gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red}`, cursor: 'pointer' }}>
+          <span style={{ fontSize: 16 }}>{gpsChecking ? '⏳' : gps ? '📍' : '❌'}</span>
+          <div><div style={{ fontSize: 12, fontWeight: 700, color: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }}>{gpsChecking ? 'Konum kontrol ediliyor...' : gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gpsChecking ? '' : gpsDistance !== null ? `${branch} · ${gpsDistance}m` : gps ? `${branch} · Koordinat henüz kaydedilmemiş` : 'İşlem yapılamaz'}</div></div>
+          <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>🔄 Yenile</span>
         </div>
       </div>
 

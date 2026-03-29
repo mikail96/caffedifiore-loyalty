@@ -4,6 +4,7 @@ import { COLORS } from '../../config/constants.js';
 import CustomerHome from './CustomerHome.jsx';
 import CustomerMenu from './CustomerMenu.jsx';
 import CustomerProfile from './CustomerProfile.jsx';
+import CustomerInvite from './CustomerInvite.jsx';
 
 const tabs = [
   { id: 'home', label: 'Ana Sayfa', icon: '🏠' },
@@ -11,21 +12,6 @@ const tabs = [
   { id: 'invite', label: 'Davet Et', icon: '🎁' },
   { id: 'profile', label: 'Profilim', icon: '👤' },
 ];
-
-// Placeholder - Faz 3 devamında gelecek
-const InvitePage = () => (
-  <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, sans-serif" }}>
-    <div style={{ background: COLORS.fioreSiyah, padding: '16px 20px 14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><img src="/icons/logo-header.png" style={{ height: 24 }} /></div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.fioreBeyaz }}>Arkadaşını Davet Et</div>
-    </div>
-    <div style={{ padding: 20, textAlign: 'center' }}>
-      <div style={{ fontSize: 48, marginBottom: 12 }}>🎁</div>
-      <div style={{ fontSize: 16, fontWeight: 800 }}>Yakında!</div>
-      <div style={{ fontSize: 13, color: COLORS.gray, marginTop: 8 }}>Davet sistemi yakında aktif olacak.</div>
-    </div>
-  </div>
-);
 
 export default function CustomerApp() {
   const [activeTab, setActiveTab] = useState('home');
@@ -36,7 +22,7 @@ export default function CustomerApp() {
     switch (activeTab) {
       case 'home': return <CustomerHome />;
       case 'menu': return <CustomerMenu />;
-      case 'invite': return <InvitePage />;
+      case 'invite': return <CustomerInvite />;
       case 'profile': return <CustomerProfile />;
       default: return <CustomerHome />;
     }
