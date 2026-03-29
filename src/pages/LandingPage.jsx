@@ -7,7 +7,7 @@ export default function LandingPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: COLORS.fioreSiyah,
+      background: '#2A1810',
       fontFamily: "Segoe UI, -apple-system, sans-serif",
       display: 'flex',
       flexDirection: 'column',

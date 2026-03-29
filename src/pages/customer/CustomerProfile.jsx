@@ -19,7 +19,7 @@ export default function CustomerProfile() {
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
 
       {/* Header */}
-      <div style={{ background: isGoat ? 'linear-gradient(135deg, #1a0f00, #0d0b08)' : 'linear-gradient(180deg, #1a1510, #0d0b08)', padding: '16px 20px 20px', textAlign: 'center' }}>
+      <div style={{ background: isGoat ? 'linear-gradient(135deg, #4A3728, #2A1810)' : 'linear-gradient(180deg, #3D2B1F, #2A1810)', padding: '16px 20px 20px', textAlign: 'center' }}>
         <img src="/icons/logo-header.png" alt="" style={{ height: 24 }} />
         <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.fioreBeyaz, marginTop: 10 }}>{userData.name}</div>
         <div style={{ marginTop: 8 }}>

@@ -18,7 +18,7 @@ export default function CustomerMenu() {
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(180deg, #1a1510, #0d0b08)', padding: '16px 20px 14px' }}>
+      <div style={{ background: 'linear-gradient(180deg, #3D2B1F, #2A1810)', padding: '16px 20px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
           <img src="/icons/logo-header.png" alt="" style={{ height: 24 }} />
         </div>
