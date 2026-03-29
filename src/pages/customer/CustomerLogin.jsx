@@ -195,8 +195,8 @@ export default function CustomerLogin() {
 
         {/* STEP 1: Phone */}
         {step === 'phone' && <>
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Giriş Yap</div>
-          <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 24 }}>Telefon numaranla devam et</div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Giriş Yap / Kayıt Ol</div>
+          <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 24 }}>Telefon numaranı gir — hesabın varsa giriş yapar, yoksa yeni hesap oluşturur</div>
 
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Telefon Numarası</div>
