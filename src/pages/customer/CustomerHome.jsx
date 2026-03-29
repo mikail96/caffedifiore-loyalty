@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { db } from '../../config/firebase.js';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { COLORS, STAMP_CONFIG, STAMP_CATEGORIES } from '../../config/constants.js';
 import { calculateLevel, stampsToNextLevel, generateQRToken } from '../../utils/helpers.js';
 
@@ -12,7 +14,7 @@ const Card = ({ children, style = {}, border }) => (
 
 const LevelBadge = ({ level }) => {
   const cfg = {
-    misafir: { icon: '☕', label: 'Fiore Misafir', color: COLORS.gray, bg: 'rgba(107,114,128,0.1)' },
+    misafir: { icon: '☕', label: 'Fiore Misafir', color: COLORS.fioreOrange, bg: COLORS.orangeGlow },
     mudavim: { icon: '⭐', label: 'Fiore Müdavim', color: COLORS.fioreOrange, bg: COLORS.orangeGlow },
     goat: { icon: '🐐', label: 'Fiore GOAT', color: COLORS.gold, bg: COLORS.goldBg },
   }[level];
@@ -52,6 +54,7 @@ export default function CustomerHome() {
   const { userData } = useAuth();
   const [qrTimer, setQrTimer] = useState(60);
   const [qrToken, setQrToken] = useState('');
+  const [campaigns, setCampaigns] = useState([]);
 
   // QR token her 60 saniyede yenilenir
   useEffect(() => {
@@ -69,6 +72,13 @@ export default function CustomerHome() {
     }, 1000);
     return () => clearInterval(t);
   }, [userData]);
+
+  // Aktif kampanyaları yükle
+  useEffect(() => {
+    getDocs(query(collection(db, 'campaigns'), where('active', '==', true)))
+      .then(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(() => {});
+  }, []);
 
   if (!userData) return null;
 
@@ -165,6 +175,22 @@ export default function CustomerHome() {
           )}
         </div>
       )}
+
+      {/* Kampanyalar */}
+      {campaigns.length > 0 && campaigns.map(camp => (
+        <div key={camp.id} style={{ padding: '14px 16px 0' }}>
+          <div style={{
+            background: `linear-gradient(135deg, ${COLORS.fioreOrange}, ${COLORS.orangeLight})`,
+            borderRadius: 14, padding: '14px 16px', color: COLORS.fioreBeyaz,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', right: -8, top: -8, fontSize: 50, opacity: 0.12 }}>☕</div>
+            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 2, opacity: 0.9 }}>KAMPANYA</div>
+            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 4 }}>{camp.title}</div>
+            {camp.description && <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>{camp.description}</div>}
+          </div>
+        </div>
+      ))}
 
       {/* Sadakat Kartı */}
       <div style={{ padding: '14px 16px 0' }}>

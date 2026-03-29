@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { COLORS, STAMP_CATEGORIES } from '../../config/constants.js';
 
 const Card = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>{children}</div>;
@@ -12,6 +12,7 @@ const tabs = [
   { id: 'dash', label: 'Dashboard', icon: '📊' },
   { id: 'cust', label: 'Müşteriler', icon: '👥' },
   { id: 'staff', label: 'Personel', icon: '👨‍🍳' },
+  { id: 'camp', label: 'Kampanya', icon: '📢' },
   { id: 'logs', label: 'İşlem Log', icon: '📋' },
 ];
 
@@ -26,16 +27,19 @@ export default function AdminPanel() {
   const [editForm, setEditForm] = useState({});
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState('');
+  const [campaigns, setCampaigns] = useState([]);
+  const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
 
   const msg = (m) => { setToast(m); setTimeout(() => setToast(null), 2500); };
 
   useEffect(() => {
     const load = async () => {
-      const [custSnap, staffSnap, logSnap, brSnap] = await Promise.all([
+      const [custSnap, staffSnap, logSnap, brSnap, campSnap] = await Promise.all([
         getDocs(collection(db, 'customers')),
         getDocs(collection(db, 'staff')),
         getDocs(collection(db, 'stampLogs')),
         getDocs(collection(db, 'branches')),
+        getDocs(collection(db, 'campaigns')),
       ]);
       const cList = custSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const order = { goat: 0, mudavim: 1, misafir: 2 };
@@ -48,6 +52,9 @@ export default function AdminPanel() {
       const brMap = {};
       brSnap.docs.forEach(d => { brMap[d.id] = d.data(); });
       setBranches(brMap);
+      const campList = campSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      campList.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setCampaigns(campList);
     };
     load();
   }, []);
@@ -186,7 +193,7 @@ export default function AdminPanel() {
               <span style={{ fontSize: 16 }}>{c.level === 'goat' ? '🐐' : c.level === 'mudavim' ? '⭐' : '☕'}</span>
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: 13, fontWeight: 700 }}>{c.name} </span>
-                <Badge text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : c.level === 'mudavim' ? COLORS.fioreOrange : COLORS.gray} />
+                <Badge text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : c.level === 'mudavim' ? COLORS.fioreOrange : COLORS.fioreOrange} />
               </div>
               <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span>
             </div>
@@ -203,13 +210,13 @@ export default function AdminPanel() {
         {filtered.map(c => (
           <Card key={c.id} style={{ marginBottom: 8, padding: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : c.level === 'mudavim' ? COLORS.orangeGlow : COLORS.grayLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange, border: `2px solid ${c.level === 'goat' ? COLORS.gold : c.level === 'mudavim' ? COLORS.fioreOrange : COLORS.gray}30` }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : c.level === 'mudavim' ? COLORS.orangeGlow : COLORS.grayLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange, border: `2px solid ${c.level === 'goat' ? COLORS.gold : c.level === 'mudavim' ? COLORS.fioreOrange : COLORS.fioreOrange}30` }}>
                 {c.name?.charAt(0)}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ fontSize: 14, fontWeight: 700 }}>{c.name}</span>
-                  <Badge text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : c.level === 'mudavim' ? COLORS.fioreOrange : COLORS.gray} />
+                  <Badge text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : c.level === 'mudavim' ? COLORS.fioreOrange : COLORS.fioreOrange} />
                 </div>
                 <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 3 }}>
                   Kart: {c.currentCard || 0}/7 · Toplam: {c.totalStamps || 0} damga
@@ -301,6 +308,85 @@ export default function AdminPanel() {
             ))}
           </div>
         ))}
+      </div>}
+
+      {/* KAMPANYALAR */}
+      {tab === 'camp' && <div style={{ padding: '14px 16px' }}>
+        {/* Yeni kampanya */}
+        <Card style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>➕ Yeni Kampanya Oluştur</div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Başlık</div>
+            <input placeholder="Örn: Hafta Sonu %20 İndirim" value={newCamp.title} onChange={e => setNewCamp(p => ({ ...p, title: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Açıklama</div>
+            <input placeholder="Kampanya detayı..." value={newCamp.desc} onChange={e => setNewCamp(p => ({ ...p, desc: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 13, boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Hedef Kitle</div>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {[['all', 'Tüm Üyeler'], ['goat', 'GOAT'], ['mudavim', 'Müdavim'], ['misafir', 'Yeni Üyeler']].map(([v, l]) => (
+                <div key={v} onClick={() => setNewCamp(p => ({ ...p, target: v }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newCamp.target === v ? COLORS.fioreOrange : COLORS.warmGray, color: newCamp.target === v ? COLORS.fioreBeyaz : COLORS.grayDark }}>{l}</div>
+              ))}
+            </div>
+          </div>
+          <Btn onClick={async () => {
+            if (!newCamp.title.trim()) { msg('Başlık girin!'); return; }
+            try {
+              const docRef = await addDoc(collection(db, 'campaigns'), {
+                title: newCamp.title.trim(),
+                description: newCamp.desc.trim(),
+                target: newCamp.target,
+                active: true,
+                createdAt: serverTimestamp(),
+              });
+              setCampaigns(p => [{ id: docRef.id, title: newCamp.title.trim(), description: newCamp.desc.trim(), target: newCamp.target, active: true, createdAt: { seconds: Date.now() / 1000 } }, ...p]);
+              setNewCamp({ title: '', desc: '', target: 'all' });
+              msg('✓ Kampanya yayınlandı!');
+            } catch (e) { msg('Hata!'); }
+          }} color={COLORS.green}>🚀 Yayınla</Btn>
+        </Card>
+
+        {/* Aktif kampanyalar */}
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>📢 Aktif Kampanyalar</div>
+        {campaigns.filter(c => c.active).length === 0 ? (
+          <Card style={{ textAlign: 'center', padding: 20, marginBottom: 14 }}><div style={{ color: COLORS.gray }}>Aktif kampanya yok</div></Card>
+        ) : campaigns.filter(c => c.active).map(c => (
+          <Card key={c.id} style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{c.title}</div>
+                {c.description && <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 3 }}>{c.description}</div>}
+                <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 4 }}>Hedef: {c.target === 'all' ? 'Tüm Üyeler' : c.target === 'goat' ? 'GOAT' : c.target === 'mudavim' ? 'Müdavim' : 'Yeni Üyeler'}</div>
+              </div>
+              <Badge text="AKTİF" color={COLORS.green} />
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <div style={{ flex: 1 }} onClick={async () => {
+                await updateDoc(doc(db, 'campaigns', c.id), { active: false });
+                setCampaigns(p => p.map(x => x.id === c.id ? { ...x, active: false } : x));
+                msg('Kampanya durduruldu');
+              }}><Btn color={COLORS.gray} sm>Durdur</Btn></div>
+              <div style={{ flex: 1 }} onClick={async () => {
+                await deleteDoc(doc(db, 'campaigns', c.id));
+                setCampaigns(p => p.filter(x => x.id !== c.id));
+                msg('Kampanya silindi');
+              }}><Btn color={COLORS.red} sm>Sil</Btn></div>
+            </div>
+          </Card>
+        ))}
+
+        {/* Geçmiş */}
+        {campaigns.filter(c => !c.active).length > 0 && <>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, marginTop: 14 }}>📦 Geçmiş Kampanyalar</div>
+          {campaigns.filter(c => !c.active).map(c => (
+            <div key={c.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div><div style={{ fontSize: 13, fontWeight: 700 }}>{c.title}</div><div style={{ fontSize: 10, color: COLORS.gray }}>{c.target === 'all' ? 'Tüm Üyeler' : c.target}</div></div>
+              <Badge text="Tamamlandı" color={COLORS.gray} />
+            </div>
+          ))}
+        </>}
       </div>}
 
       {/* İŞLEM LOG */}
