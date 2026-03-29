@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { COLORS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 
 const Card = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>{children}</div>;
@@ -32,6 +32,30 @@ export default function StaffPanel() {
     if (!sel || !gps || (sel.currentCard || 0) >= 7 || busy) return;
     setBusy(true);
     try {
+      // 15 dakika kontrolü - son damgayı kontrol et
+      const recentQuery = query(
+        collection(db, 'stampLogs'),
+        where('customerId', '==', sel.id),
+        where('type', '==', 'stamp')
+      );
+      const recentSnap = await getDocs(recentQuery);
+      if (!recentSnap.empty) {
+        let lastTime = 0;
+        recentSnap.docs.forEach(d => {
+          const t = d.data().timestamp?.toDate?.()?.getTime() || 0;
+          if (t > lastTime) lastTime = t;
+        });
+        if (lastTime > 0) {
+          const diffMin = (Date.now() - lastTime) / 60000;
+          if (diffMin < STAMP_CONFIG.minStampIntervalMinutes) {
+            const remaining = Math.ceil(STAMP_CONFIG.minStampIntervalMinutes - diffMin);
+            msg(`⏱ Son damgadan ${remaining} dk daha beklenmeli!`, 'error');
+            setBusy(false);
+            return;
+          }
+        }
+      }
+
       const nc = (sel.currentCard || 0) + 1, nt = (sel.totalStamps || 0) + 1;
       let nl = sel.level;
       if (nt >= 40 && sel.level !== 'goat') nl = 'goat';
