@@ -275,7 +275,7 @@ export default function AdminPanel() {
               <div>
                 <span style={{ fontSize: 14, fontWeight: 700 }}>{l.customerName}</span>
                 <span style={{ fontSize: 11, color: COLORS.gray, marginLeft: 8 }}>
-                  {l.timestamp?.toDate?.()?.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || ''}
+                  {l.timestamp?.toDate?.()?.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + ' ' + l.timestamp?.toDate?.()?.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || ''}
                 </span>
               </div>
               <Badge
