@@ -4,22 +4,7 @@ import LandingPage from './pages/LandingPage.jsx';
 import CustomerLogin from './pages/customer/CustomerLogin.jsx';
 import CustomerApp from './pages/customer/CustomerApp.jsx';
 import BusinessLogin from './pages/BusinessLogin.jsx';
-
-const StaffApp = () => {
-  const { userData, logout } = useAuth();
-  return (
-    <div style={{ minHeight: '100vh', background: '#FFF9F3', fontFamily: 'Segoe UI, sans-serif', padding: 20 }}>
-      <div style={{ textAlign: 'center', paddingTop: 40 }}>
-        <img src="/icons/logo-header.png" style={{ height: 36 }} />
-        <div style={{ fontSize: 20, fontWeight: 800, marginTop: 16, color: '#3B82F6' }}>Personel Paneli</div>
-        <div style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>{(userData?.name || 'Personel') + " \u2014 " + (userData?.role || '')}</div>
-        <div style={{ fontSize: 12, color: '#22C55E', marginTop: 4, fontWeight: 700 }}>{"\u2713 Giri\u015F ba\u015Far\u0131l\u0131"}</div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 16 }}>{"Personel ekranlar\u0131 Faz 4'te eklenecek"}</div>
-        <div onClick={logout} style={{ marginTop: 24, background: '#3B82F6', color: '#FFF', borderRadius: 14, padding: '14px 24px', fontWeight: 700, cursor: 'pointer', display: 'inline-block' }}>{"\u00C7\u0131k\u0131\u015F Yap"}</div>
-      </div>
-    </div>
-  );
-};
+import StaffPanel from './pages/staff/StaffPanel.jsx';
 
 const AdminApp = () => {
   const { logout } = useAuth();
@@ -55,7 +40,7 @@ function AppRoutes() {
       <Route path="/musteri/giris" element={<CustomerLogin />} />
       <Route path="/musteri/*" element={<ProtectedRoute allowedRole="customer"><CustomerApp /></ProtectedRoute>} />
       <Route path="/isletme/giris" element={<BusinessLogin />} />
-      <Route path="/personel/*" element={<ProtectedRoute allowedRole="staff"><StaffApp /></ProtectedRoute>} />
+      <Route path="/personel/*" element={<ProtectedRoute allowedRole="staff"><StaffPanel /></ProtectedRoute>} />
       <Route path="/admin/*" element={<ProtectedRoute allowedRole="admin"><AdminApp /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
