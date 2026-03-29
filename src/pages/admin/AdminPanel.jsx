@@ -29,6 +29,8 @@ export default function AdminPanel() {
   const [search, setSearch] = useState('');
   const [campaigns, setCampaigns] = useState([]);
   const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
+  const [adminEdit, setAdminEdit] = useState(null);
+  const [adminForm, setAdminForm] = useState({ username: '', password: '', phone: '' });
 
   const msg = (m) => { setToast(m); setTimeout(() => setToast(null), 2500); };
 
@@ -198,6 +200,57 @@ export default function AdminPanel() {
               <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span>
             </div>
           ))}
+        </Card>
+
+        {/* Admin Ayarları */}
+        <Card style={{ marginTop: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: adminEdit ? 12 : 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>⚙️ Admin Ayarları</div>
+            {!adminEdit && (
+              <div onClick={async () => {
+                const snap = await getDocs(collection(db, 'settings'));
+                const adminDoc = snap.docs.find(d => d.id === 'admin');
+                if (adminDoc) {
+                  const data = adminDoc.data();
+                  setAdminForm({ username: data.username || '', password: data.password || '', phone: data.phone || '' });
+                  setAdminEdit(true);
+                }
+              }} style={{ fontSize: 12, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 12px', borderRadius: 8 }}>
+                ✏️ Düzenle
+              </div>
+            )}
+          </div>
+          {adminEdit && (
+            <div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Kullanıcı Adı</div>
+                <input value={adminForm.username} onChange={e => setAdminForm(p => ({ ...p, username: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 13, boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Şifre</div>
+                <input value={adminForm.password} onChange={e => setAdminForm(p => ({ ...p, password: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 13, boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Telefon Numarası</div>
+                <input value={adminForm.phone} onChange={e => setAdminForm(p => ({ ...p, phone: e.target.value }))} placeholder="+905XXXXXXXXX" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 13, boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}><Btn onClick={async () => {
+                  if (!adminForm.username.trim() || !adminForm.password.trim()) { msg('Kullanıcı adı ve şifre boş olamaz!'); return; }
+                  try {
+                    await updateDoc(doc(db, 'settings', 'admin'), {
+                      username: adminForm.username.trim(),
+                      password: adminForm.password.trim(),
+                      phone: adminForm.phone.trim(),
+                    });
+                    setAdminEdit(null);
+                    msg('✓ Admin bilgileri güncellendi!');
+                  } catch (e) { msg('Hata!'); }
+                }} color={COLORS.green} sm>✓ Kaydet</Btn></div>
+                <div style={{ flex: 1 }}><Btn onClick={() => setAdminEdit(null)} color={COLORS.gray} sm>İptal</Btn></div>
+              </div>
+            </div>
+          )}
         </Card>
       </div>}
 

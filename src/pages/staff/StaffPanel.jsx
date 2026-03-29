@@ -26,11 +26,15 @@ export default function StaffPanel() {
   const [logs, setLogs] = useState([]);
   const [tStamp, setTStamp] = useState(0);
   const [tFree, setTFree] = useState(0);
+  const [campaigns, setCampaigns] = useState([]);
   const branch = userData?.branch === 'gokkusagi' ? 'Gökkuşağı AVM' : 'Forum Kampüs AVM';
   const msg = (m, t = 'success') => { setToast(m); setTt(t); setTimeout(() => setToast(null), 2500); };
 
   // Müşterileri yükle
-  useEffect(() => { getDocs(collection(db, 'customers')).then(snap => { const list = snap.docs.map(d => ({ id: d.id, ...d.data() })); const o = { goat: 0, mudavim: 1, misafir: 2 }; list.sort((a, b) => (o[a.level] || 2) - (o[b.level] || 2) || (b.totalStamps || 0) - (a.totalStamps || 0)); setCustomers(list); }); }, []);
+  useEffect(() => {
+    getDocs(collection(db, 'customers')).then(snap => { const list = snap.docs.map(d => ({ id: d.id, ...d.data() })); const o = { goat: 0, mudavim: 1, misafir: 2 }; list.sort((a, b) => (o[a.level] || 2) - (o[b.level] || 2) || (b.totalStamps || 0) - (a.totalStamps || 0)); setCustomers(list); });
+    getDocs(query(collection(db, 'campaigns'), where('active', '==', true))).then(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() })))).catch(() => {});
+  }, []);
 
   // GPS kontrolü
   const checkGPS = async () => {
@@ -164,6 +168,18 @@ export default function StaffPanel() {
           <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>🔄 Yenile</span>
         </div>
       </div>
+
+      {/* Aktif Kampanyalar */}
+      {campaigns.length > 0 && <div style={{ padding: '0 16px 10px' }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.grayDark, marginBottom: 6 }}>📢 Aktif Kampanyalar</div>
+        {campaigns.map(c => (
+          <div key={c.id} style={{ background: COLORS.orangeGlow, borderRadius: 10, padding: '10px 14px', marginBottom: 4, border: `1.5px solid ${COLORS.fioreOrange}30` }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.title}</div>
+            {c.description && <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 2 }}>{c.description}</div>}
+            <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 2 }}>Hedef: {c.target === 'all' ? 'Tüm Üyeler' : c.target === 'goat' ? 'GOAT' : c.target === 'mudavim' ? 'Müdavim' : 'Yeni Üyeler'}</div>
+          </div>
+        ))}
+      </div>}
 
       {!sel && <div style={{ padding: '0 16px 16px' }}>
         <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>Müşteri QR Okut:</div>
