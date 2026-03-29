@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../../config/firebase.js';
+import { db } from '../config/firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { COLORS } from '../../config/constants.js';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { COLORS } from '../config/constants.js';
 
 export default function BusinessLogin() {
   const navigate = useNavigate();

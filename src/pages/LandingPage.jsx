@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { COLORS } from '../../config/constants.js';
+import { COLORS } from '../config/constants.js';
 
 export default function LandingPage() {
   const navigate = useNavigate();
