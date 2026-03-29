@@ -2,24 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import CustomerLogin from './pages/customer/CustomerLogin.jsx';
+import CustomerApp from './pages/customer/CustomerApp.jsx';
 import BusinessLogin from './pages/BusinessLogin.jsx';
-
-// Placeholder ekranlar - Faz 3-5'te gerçekleri gelecek
-const CustomerApp = () => {
-  const { userData, logout } = useAuth();
-  return (
-    <div style={{ minHeight: '100vh', background: '#FFF9F3', fontFamily: 'Segoe UI, sans-serif', padding: 20 }}>
-      <div style={{ textAlign: 'center', paddingTop: 40 }}>
-        <img src="/icons/logo-header.png" style={{ height: 36 }} />
-        <div style={{ fontSize: 20, fontWeight: 800, marginTop: 16 }}>{"Ho\u015F Geldin! \uD83C\uDF89"}</div>
-        <div style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>{userData?.name || 'M\u00FC\u015Fteri'}</div>
-        <div style={{ fontSize: 12, color: '#22C55E', marginTop: 4, fontWeight: 700 }}>{"\u2713 Giri\u015F ba\u015Far\u0131l\u0131 \u2014 " + (userData?.level || 'misafir')}</div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 16 }}>{"M\u00FC\u015Fteri ekranlar\u0131 Faz 3'te eklenecek"}</div>
-        <div onClick={logout} style={{ marginTop: 24, background: '#EC671A', color: '#FFF', borderRadius: 14, padding: '14px 24px', fontWeight: 700, cursor: 'pointer', display: 'inline-block' }}>{"\u00C7\u0131k\u0131\u015F Yap"}</div>
-      </div>
-    </div>
-  );
-};
 
 const StaffApp = () => {
   const { userData, logout } = useAuth();
