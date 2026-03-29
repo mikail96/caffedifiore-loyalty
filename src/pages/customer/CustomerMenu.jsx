@@ -65,18 +65,6 @@ export default function CustomerMenu() {
           )}
         </div>
 
-        {/* Damga bilgisi */}
-        {menu.stampEligible !== undefined && (
-          <div style={{
-            fontSize: 10, fontWeight: 700, marginBottom: 8, padding: '4px 10px', borderRadius: 6, display: 'inline-block',
-            background: menu.stampEligible ? COLORS.greenBg : 'rgba(239,68,68,0.06)',
-            color: menu.stampEligible ? COLORS.green : COLORS.red,
-            border: `1px solid ${menu.stampEligible ? COLORS.green : COLORS.red}30`,
-          }}>
-            {menu.stampEligible ? '☕ Damga kazandırır' : '✗ Damga kazandırmaz'}
-          </div>
-        )}
-
         {menu.items.map(item => {
           const isFav = favorites.has(item.name);
           const hasDualPrice = menu.type === 'hot' && item.price16oz && !item.singleSize;
