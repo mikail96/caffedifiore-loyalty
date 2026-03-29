@@ -1,50 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Müşteriler - sadece kendi verisini okuyabilir
+    // Müşteriler
     match /customers/{customerId} {
       allow read: if request.auth != null && request.auth.uid == customerId;
       allow create: if request.auth != null && request.auth.uid == customerId;
-      allow update: if request.auth != null && request.auth.uid == customerId
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['level', 'totalStamps', 'currentCard', 'goatMonthlyUsed']);
-      // Damga/seviye güncellemeleri sadece Cloud Functions üzerinden
+      allow update: if request.auth != null && request.auth.uid == customerId;
     }
 
-    // Personel - sadece admin yazabilir, personel kendini okuyabilir
+    // Personel - giriş için okuma gerekli
     match /staff/{staffId} {
-      allow read: if true; // Personel girişi için
-      allow write: if false; // Sadece admin (Cloud Functions)
+      allow read: if true;
+      allow write: if false;
     }
 
-    // Şubeler - herkes okuyabilir
+    // Şubeler
     match /branches/{branchId} {
       allow read: if true;
-      allow write: if false; // Sadece admin
+      allow write: if false;
     }
 
-    // Damga logları - sadece Cloud Functions yazabilir
-    match /stampLogs/{logId} {
-      allow read: if request.auth != null;
-      allow write: if false; // Cloud Functions
-    }
-
-    // Kampanyalar - herkes okuyabilir
-    match /campaigns/{campaignId} {
-      allow read: if true;
-      allow write: if false; // Sadece admin
-    }
-
-    // Menü - herkes okuyabilir
-    match /menu/{itemId} {
-      allow read: if true;
-      allow write: if false; // Sadece admin
-    }
-
-    // Ayarlar
+    // Ayarlar - admin giriş kontrolü için okuma
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if false; // Sadece admin
+      allow write: if false;
+    }
+
+    // Damga logları
+    match /stampLogs/{logId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Kampanyalar
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Menü
+    match /menu/{itemId} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

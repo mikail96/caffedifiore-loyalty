@@ -1,32 +1,78 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import LandingPage from './pages/LandingPage.jsx';
+import CustomerLogin from './pages/customer/CustomerLogin.jsx';
+import BusinessLogin from './pages/BusinessLogin.jsx';
 
-// Placeholder components - Faz 2-5'te gerçek componentler gelecek
-const CustomerLogin = () => <div style={{ padding: 40, textAlign: 'center', color: '#EC671A' }}>Müşteri Giriş - Faz 2'de gelecek</div>;
-const CustomerHome = () => <div style={{ padding: 40, textAlign: 'center', color: '#EC671A' }}>Müşteri Ana Sayfa - Faz 3'te gelecek</div>;
-const BusinessLogin = () => <div style={{ padding: 40, textAlign: 'center', color: '#3B82F6' }}>İşletme Giriş - Faz 2'de gelecek</div>;
-const StaffPanel = () => <div style={{ padding: 40, textAlign: 'center', color: '#3B82F6' }}>Personel Panel - Faz 4'te gelecek</div>;
-const AdminPanel = () => <div style={{ padding: 40, textAlign: 'center', color: '#8B5CF6' }}>Admin Panel - Faz 5'te gelecek</div>;
+// Placeholder ekranlar - Faz 3-5'te gerçekleri gelecek
+const CustomerApp = () => {
+  const { userData, logout } = useAuth();
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFF9F3', fontFamily: 'Segoe UI, sans-serif', padding: 20 }}>
+      <div style={{ textAlign: 'center', paddingTop: 40 }}>
+        <img src="/icons/logo-header.png" style={{ height: 36 }} />
+        <div style={{ fontSize: 20, fontWeight: 800, marginTop: 16 }}>{"Ho\u015F Geldin! \uD83C\uDF89"}</div>
+        <div style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>{userData?.name || 'M\u00FC\u015Fteri'}</div>
+        <div style={{ fontSize: 12, color: '#22C55E', marginTop: 4, fontWeight: 700 }}>{"\u2713 Giri\u015F ba\u015Far\u0131l\u0131 \u2014 " + (userData?.level || 'misafir')}</div>
+        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 16 }}>{"M\u00FC\u015Fteri ekranlar\u0131 Faz 3'te eklenecek"}</div>
+        <div onClick={logout} style={{ marginTop: 24, background: '#EC671A', color: '#FFF', borderRadius: 14, padding: '14px 24px', fontWeight: 700, cursor: 'pointer', display: 'inline-block' }}>{"\u00C7\u0131k\u0131\u015F Yap"}</div>
+      </div>
+    </div>
+  );
+};
+
+const StaffApp = () => {
+  const { userData, logout } = useAuth();
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFF9F3', fontFamily: 'Segoe UI, sans-serif', padding: 20 }}>
+      <div style={{ textAlign: 'center', paddingTop: 40 }}>
+        <img src="/icons/logo-header.png" style={{ height: 36 }} />
+        <div style={{ fontSize: 20, fontWeight: 800, marginTop: 16, color: '#3B82F6' }}>Personel Paneli</div>
+        <div style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>{(userData?.name || 'Personel') + " \u2014 " + (userData?.role || '')}</div>
+        <div style={{ fontSize: 12, color: '#22C55E', marginTop: 4, fontWeight: 700 }}>{"\u2713 Giri\u015F ba\u015Far\u0131l\u0131"}</div>
+        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 16 }}>{"Personel ekranlar\u0131 Faz 4'te eklenecek"}</div>
+        <div onClick={logout} style={{ marginTop: 24, background: '#3B82F6', color: '#FFF', borderRadius: 14, padding: '14px 24px', fontWeight: 700, cursor: 'pointer', display: 'inline-block' }}>{"\u00C7\u0131k\u0131\u015F Yap"}</div>
+      </div>
+    </div>
+  );
+};
+
+const AdminApp = () => {
+  const { logout } = useAuth();
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFF9F3', fontFamily: 'Segoe UI, sans-serif', padding: 20 }}>
+      <div style={{ textAlign: 'center', paddingTop: 40 }}>
+        <img src="/icons/logo-header.png" style={{ height: 36 }} />
+        <div style={{ fontSize: 20, fontWeight: 800, marginTop: 16, color: '#8B5CF6' }}>Admin Paneli</div>
+        <div style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>Merhaba Mikail</div>
+        <div style={{ fontSize: 12, color: '#22C55E', marginTop: 4, fontWeight: 700 }}>{"\u2713 Giri\u015F ba\u015Far\u0131l\u0131"}</div>
+        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 16 }}>{"Admin ekranlar\u0131 Faz 5'te eklenecek"}</div>
+        <div onClick={logout} style={{ marginTop: 24, background: '#8B5CF6', color: '#FFF', borderRadius: 14, padding: '14px 24px', fontWeight: 700, cursor: 'pointer', display: 'inline-block' }}>{"\u00C7\u0131k\u0131\u015F Yap"}</div>
+      </div>
+    </div>
+  );
+};
+
+function ProtectedRoute({ allowedRole, children }) {
+  const { role, loading } = useAuth();
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#030303', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <img src="/icons/logo-header.png" style={{ height: 40, opacity: 0.6 }} />
+    </div>
+  );
+  if (!role || role !== allowedRole) return <Navigate to="/" replace />;
+  return children;
+}
 
 function AppRoutes() {
-  const { role } = useAuth();
-
   return (
     <Routes>
-      {/* Landing - herkes görür */}
       <Route path="/" element={<LandingPage />} />
-
-      {/* Müşteri */}
       <Route path="/musteri/giris" element={<CustomerLogin />} />
-      <Route path="/musteri/*" element={<CustomerHome />} />
-
-      {/* İşletme (Personel + Admin) */}
+      <Route path="/musteri/*" element={<ProtectedRoute allowedRole="customer"><CustomerApp /></ProtectedRoute>} />
       <Route path="/isletme/giris" element={<BusinessLogin />} />
-      <Route path="/personel/*" element={<StaffPanel />} />
-      <Route path="/admin/*" element={<AdminPanel />} />
-
-      {/* 404 */}
+      <Route path="/personel/*" element={<ProtectedRoute allowedRole="staff"><StaffApp /></ProtectedRoute>} />
+      <Route path="/admin/*" element={<ProtectedRoute allowedRole="admin"><AdminApp /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -36,12 +82,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div style={{
-          maxWidth: 480,
-          margin: '0 auto',
-          minHeight: '100vh',
-          fontFamily: "'Segoe UI', -apple-system, system-ui, sans-serif",
-        }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh' }}>
           <AppRoutes />
         </div>
       </AuthProvider>
