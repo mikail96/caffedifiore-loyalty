@@ -4,9 +4,11 @@ import { auth, db } from '../../config/firebase.js';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { COLORS } from '../../config/constants.js';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 
 export default function CustomerLogin() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [step, setStep] = useState('phone'); // phone | otp | register
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -80,6 +82,7 @@ export default function CustomerLogin() {
       const customerDoc = await getDoc(doc(db, 'customers', uid));
       if (customerDoc.exists()) {
         // Mevcut müşteri — ana sayfaya yönlendir
+        await refreshUser();
         navigate('/musteri');
       } else {
         // Yeni müşteri — kayıt ekranı
@@ -125,6 +128,7 @@ export default function CustomerLogin() {
         createdAt: serverTimestamp(),
       });
 
+      await refreshUser();
       navigate('/musteri');
     } catch (err) {
       console.error('Register error:', err);

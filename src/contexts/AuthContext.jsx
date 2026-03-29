@@ -6,21 +6,26 @@ import { doc, getDoc } from 'firebase/firestore';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);        // Firebase auth user
-  const [userData, setUserData] = useState(null);  // Firestore user data
-  const [role, setRole] = useState(null);          // 'customer' | 'staff' | 'admin' | null
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const loadCustomerData = async (uid) => {
+    const customerDoc = await getDoc(doc(db, 'customers', uid));
+    if (customerDoc.exists()) {
+      setUserData(customerDoc.data());
+      setRole('customer');
+      return true;
+    }
+    return false;
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        // Müşteri mi kontrol et
-        const customerDoc = await getDoc(doc(db, 'customers', firebaseUser.uid));
-        if (customerDoc.exists()) {
-          setUserData(customerDoc.data());
-          setRole('customer');
-        }
+        await loadCustomerData(firebaseUser.uid);
       } else {
         setUser(null);
         setUserData(null);
@@ -31,42 +36,32 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  // Personel girişi (kullanıcı adı + PIN)
+  // Kayit sonrasi veya veri degisikliginde cagir
+  const refreshUser = async () => {
+    if (auth.currentUser) {
+      await loadCustomerData(auth.currentUser.uid);
+    }
+  };
+
   const loginAsStaff = async (staffData) => {
     setUserData(staffData);
     setRole('staff');
   };
 
-  // Admin girişi (kullanıcı adı + şifre + SMS)
   const loginAsAdmin = async (adminData) => {
     setUserData(adminData);
     setRole('admin');
   };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {
-      // Staff/admin Firebase auth kullanmıyor
-    }
+    try { await signOut(auth); } catch (e) {}
     setUser(null);
     setUserData(null);
     setRole(null);
   };
 
-  const value = {
-    user,
-    userData,
-    role,
-    loading,
-    loginAsStaff,
-    loginAsAdmin,
-    logout,
-    setUserData, // Profil güncellemelerinde
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, userData, role, loading, loginAsStaff, loginAsAdmin, logout, refreshUser, setUserData }}>
       {children}
     </AuthContext.Provider>
   );
