@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Müşteriler - sadece kendi verisini okuyabilir
+    match /customers/{customerId} {
+      allow read: if request.auth != null && request.auth.uid == customerId;
+      allow create: if request.auth != null && request.auth.uid == customerId;
+      allow update: if request.auth != null && request.auth.uid == customerId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['level', 'totalStamps', 'currentCard', 'goatMonthlyUsed']);
+      // Damga/seviye güncellemeleri sadece Cloud Functions üzerinden
+    }
+
+    // Personel - sadece admin yazabilir, personel kendini okuyabilir
+    match /staff/{staffId} {
+      allow read: if true; // Personel girişi için
+      allow write: if false; // Sadece admin (Cloud Functions)
+    }
+
+    // Şubeler - herkes okuyabilir
+    match /branches/{branchId} {
+      allow read: if true;
+      allow write: if false; // Sadece admin
+    }
+
+    // Damga logları - sadece Cloud Functions yazabilir
+    match /stampLogs/{logId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Cloud Functions
+    }
+
+    // Kampanyalar - herkes okuyabilir
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if false; // Sadece admin
+    }
+
+    // Menü - herkes okuyabilir
+    match /menu/{itemId} {
+      allow read: if true;
+      allow write: if false; // Sadece admin
+    }
+
+    // Ayarlar
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if false; // Sadece admin
+    }
+  }
+}
