@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../config/firebase.js';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, increment } from 'firebase/firestore';
 import { COLORS } from '../../config/constants.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
@@ -14,6 +14,7 @@ export default function CustomerLogin() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [name, setName] = useState('');
   const [birth, setBirth] = useState('');
+  const [refInput, setRefInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmResult, setConfirmResult] = useState(null);
@@ -111,6 +112,23 @@ export default function CustomerLogin() {
       const refCode = name.trim().toUpperCase().replace(/\s/g, '').slice(0, 5) +
         Math.random().toString(36).slice(2, 6).toUpperCase();
 
+      // Davet kodu girilmişse referans sahibini bul
+      let referredByUid = null;
+      if (refInput.trim()) {
+        const refQuery = query(
+          collection(db, 'customers'),
+          where('referralCode', '==', refInput.trim().toUpperCase())
+        );
+        const refSnap = await getDocs(refQuery);
+        if (!refSnap.empty) {
+          referredByUid = refSnap.docs[0].id;
+          // Referans sahibinin sayacını artır
+          await updateDoc(doc(db, 'customers', referredByUid), {
+            referralCount: increment(1),
+          });
+        }
+      }
+
       await setDoc(doc(db, 'customers', uid), {
         name: name.trim(),
         phone: phoneNumber,
@@ -121,7 +139,7 @@ export default function CustomerLogin() {
         goatMonthlyUsed: false,
         goatMonthlyResetDate: null,
         referralCode: refCode,
-        referredBy: null,
+        referredBy: referredByUid,
         referralCount: 0,
         favoriteItems: [],
         qrSecret: Math.random().toString(36).slice(2) + Date.now().toString(36),
@@ -282,6 +300,20 @@ export default function CustomerLogin() {
               onChange={e => setBirth(e.target.value)}
               style={inputStyle}
             />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Davet Kodu (isteğe bağlı)</div>
+            <input
+              placeholder="Arkadaşından aldığın kodu gir"
+              value={refInput}
+              onChange={e => setRefInput(e.target.value.toUpperCase())}
+              style={{ ...inputStyle, letterSpacing: 2 }}
+              autoCapitalize="characters"
+            />
+            <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 4 }}>
+              Davet kodun varsa gir — arkadaşın bonus damga kazansın!
+            </div>
           </div>
 
           {error && <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: `1px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
