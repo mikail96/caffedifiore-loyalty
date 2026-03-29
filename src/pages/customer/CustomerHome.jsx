@@ -68,7 +68,7 @@ export default function CustomerHome() {
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
 
       {/* Header */}
-      <div style={{ background: isGoat ? `linear-gradient(135deg, #1a0f00, ${COLORS.fioreSiyah})` : COLORS.fioreSiyah, padding: '16px 20px 18px' }}>
+      <div style={{ background: isGoat ? 'linear-gradient(135deg, #1a0f00, #0d0b08)' : 'linear-gradient(180deg, #1a1510, #0d0b08)', padding: '16px 20px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
           <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 28 }} />
         </div>

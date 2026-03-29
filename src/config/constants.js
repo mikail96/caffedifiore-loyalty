@@ -2,6 +2,8 @@
 export const COLORS = {
   fioreOrange: '#EC671A',
   fioreSiyah: '#030303',
+  headerDark: '#1a1510',
+  headerGradient: 'linear-gradient(180deg, #1a1510, #0d0b08)',
   fioreBeyaz: '#FFFFFF',
   orangeLight: '#F4943E',
   orangeGlow: 'rgba(236,103,26,0.12)',
