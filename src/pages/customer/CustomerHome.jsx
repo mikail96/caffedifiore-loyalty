@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { COLORS, STAMP_CONFIG, STAMP_CATEGORIES } from '../../config/constants.js';
-import { calculateLevel, stampsToNextLevel } from '../../utils/helpers.js';
+import { calculateLevel, stampsToNextLevel, generateQRToken } from '../../utils/helpers.js';
 
 const Card = ({ children, style = {}, border }) => (
   <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>
@@ -50,11 +51,24 @@ const StampCard = ({ count, total = 7 }) => (
 export default function CustomerHome() {
   const { userData } = useAuth();
   const [qrTimer, setQrTimer] = useState(60);
+  const [qrToken, setQrToken] = useState('');
 
+  // QR token her 60 saniyede yenilenir
   useEffect(() => {
-    const t = setInterval(() => setQrTimer(p => p <= 1 ? 60 : p - 1), 1000);
+    const genToken = () => {
+      const secret = userData?.qrSecret || 'default';
+      const uid = userData?.phone || 'unknown';
+      setQrToken(generateQRToken(uid, secret));
+    };
+    genToken();
+    const t = setInterval(() => {
+      setQrTimer(p => {
+        if (p <= 1) { genToken(); return 60; }
+        return p - 1;
+      });
+    }, 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [userData]);
 
   if (!userData) return null;
 
@@ -177,12 +191,15 @@ export default function CustomerHome() {
             </div>
           )}
           <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 10 }}>Kasada QR Göster</div>
-          <div style={{
-            width: 120, height: 120, margin: '0 auto',
-            background: `repeating-conic-gradient(${COLORS.fioreSiyah} 0% 25%, ${COLORS.fioreBeyaz} 0% 50%) 50% / 12px 12px`,
-            borderRadius: 14,
-            border: `4px solid ${isGoat ? COLORS.gold : COLORS.fioreOrange}`,
-          }} />
+          <div style={{ padding: 8, background: COLORS.fioreBeyaz, borderRadius: 14, display: 'inline-block', border: `4px solid ${isGoat ? COLORS.gold : COLORS.fioreOrange}` }}>
+            <QRCodeSVG
+              value={qrToken}
+              size={130}
+              level="M"
+              fgColor={COLORS.fioreSiyah}
+              bgColor={COLORS.fioreBeyaz}
+            />
+          </div>
           {isGoat && (
             <div style={{ marginTop: 8 }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: COLORS.fioreBeyaz, background: COLORS.gold, padding: '4px 12px', borderRadius: 10 }}>
