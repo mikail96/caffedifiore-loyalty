@@ -38,7 +38,7 @@ export default function AdminPanel() {
   const [newStaff, setNewStaff] = useState({ name: '', username: '', pin: '', role: 'Barista', branch: '' });
   const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
   const [newBranch, setNewBranch] = useState({ name: '', shortName: '' });
-  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', type: 'hot', categoryIcon: '☕' });
+  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', singleSize: false });
   const [editingMenuItem, setEditingMenuItem] = useState(null);
   const [menuEditForm, setMenuEditForm] = useState({});
   const [adminEdit, setAdminEdit] = useState(null);
@@ -313,17 +313,33 @@ export default function AdminPanel() {
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ flex: 1 }}><Inp label="14oz Fiyat (₺)" value={newMenu.price14oz} onChange={v => setNewMenu(p => ({ ...p, price14oz: v }))} placeholder="160" type="number" /></div>
-            <div style={{ flex: 1 }}><Inp label="16oz Fiyat (₺)" value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="170" type="number" /></div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Fiyat Tipi</div>
+            <div style={{ display: 'flex', gap: 5 }}>
+              <div onClick={() => setNewMenu(p => ({ ...p, singleSize: false }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: !newMenu.singleSize ? COLORS.fioreOrange : COLORS.warmGray, color: !newMenu.singleSize ? COLORS.fioreBeyaz : COLORS.grayDark }}>14oz / 16oz</div>
+              <div onClick={() => setNewMenu(p => ({ ...p, singleSize: true }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newMenu.singleSize ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.singleSize ? COLORS.fioreBeyaz : COLORS.grayDark }}>Tek Fiyat</div>
+            </div>
           </div>
+          {newMenu.singleSize ? (
+            <Inp label="Fiyat (₺)" value={newMenu.price} onChange={v => setNewMenu(p => ({ ...p, price: v }))} placeholder="80" type="number" />
+          ) : (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}><Inp label="14oz Fiyat (₺)" value={newMenu.price14oz} onChange={v => setNewMenu(p => ({ ...p, price14oz: v }))} placeholder="160" type="number" /></div>
+              <div style={{ flex: 1 }}><Inp label="16oz Fiyat (₺)" value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="170" type="number" /></div>
+            </div>
+          )}
           <Bt onClick={async () => {
             if (!newMenu.name || !newMenu.category) { msg('Ad ve kategori girin!'); return; }
             const id = `${newMenu.category}__${newMenu.name}`.replace(/[\/\s#]/g, '_');
-            const data = { name: newMenu.name, category: newMenu.category, categoryIcon: newMenu.categoryIcon, type: newMenu.type, price14oz: Number(newMenu.price14oz) || 0, price16oz: Number(newMenu.price16oz) || 0, singleSize: false, isGoat: false, stampEligible: true, note: '', order: menuItems.length, active: true };
+            const data = {
+              name: newMenu.name, category: newMenu.category, categoryIcon: newMenu.categoryIcon, type: newMenu.type,
+              price14oz: newMenu.singleSize ? Number(newMenu.price) || 0 : Number(newMenu.price14oz) || 0,
+              price16oz: newMenu.singleSize ? 0 : Number(newMenu.price16oz) || 0,
+              singleSize: newMenu.singleSize, isGoat: false, stampEligible: true, note: '', order: menuItems.length, active: true,
+            };
             await setDoc(doc(db, 'menuItems', id), data);
             setMenuItems(p => [...p, { id, ...data }]);
-            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', type: 'hot', categoryIcon: '☕' });
+            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', singleSize: false });
             msg('✓ Ürün eklendi!');
           }} color={COLORS.green}>✓ Ürün Ekle</Bt>
         </C>
@@ -339,10 +355,14 @@ export default function AdminPanel() {
                 {isEd ? (
                   <div>
                     <Inp label="Ürün Adı" value={menuEditForm.name || ''} onChange={v => setMenuEditForm(p => ({ ...p, name: v }))} />
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                      <div style={{ flex: 1 }}><Inp label="14oz ₺" value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
-                      <div style={{ flex: 1 }}><Inp label="16oz ₺" value={menuEditForm.price16oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
-                    </div>
+                    {item.singleSize || (!item.price16oz && item.price14oz) ? (
+                      <Inp label="Fiyat (₺)" value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" />
+                    ) : (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                        <div style={{ flex: 1 }}><Inp label="14oz ₺" value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
+                        <div style={{ flex: 1 }}><Inp label="16oz ₺" value={menuEditForm.price16oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', gap: 8 }}>
                       <div style={{ flex: 1 }}><Bt onClick={async () => {
                         const upd = { name: menuEditForm.name, price14oz: Number(menuEditForm.price14oz) || 0, price16oz: Number(menuEditForm.price16oz) || 0 };
