@@ -59,8 +59,14 @@ export default function CustomerLogin() {
       console.error('SMS error:', err);
       if (err.code === 'auth/too-many-requests') {
         setError('Çok fazla deneme. Lütfen biraz bekleyin.');
+      } else if (err.code === 'auth/invalid-phone-number') {
+        setError('Geçersiz telefon numarası. Başında 5 ile başlayan 10 haneli numara girin.');
+      } else if (err.code === 'auth/quota-exceeded') {
+        setError('SMS kotası doldu. Lütfen daha sonra tekrar deneyin.');
+      } else if (err.code === 'auth/captcha-check-failed') {
+        setError('Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.');
       } else {
-        setError('SMS gönderilemedi. Numaranızı kontrol edin.');
+        setError(`Hata: ${err.code || 'bilinmiyor'} — ${err.message || 'SMS gönderilemedi'}`);
       }
     }
     setLoading(false);
