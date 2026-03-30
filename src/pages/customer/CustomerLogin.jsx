@@ -30,14 +30,23 @@ export default function CustomerLogin() {
     return '+90' + clean;
   };
 
-  // reCAPTCHA başlat
+  // reCAPTCHA başlat — her seferinde yeniden oluştur
   const setupRecaptcha = () => {
-    if (!recaptchaRef.current) {
-      recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {},
-      });
+    // Eski verifier'ı temizle
+    if (recaptchaRef.current) {
+      try { recaptchaRef.current.clear(); } catch (e) {}
+      recaptchaRef.current = null;
     }
+    // Recaptcha container'ı temizle
+    const container = document.getElementById('recaptcha-container');
+    if (container) container.innerHTML = '';
+    
+    recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'normal',
+      callback: () => { console.log('reCAPTCHA solved'); },
+      'expired-callback': () => { console.log('reCAPTCHA expired'); recaptchaRef.current = null; },
+    });
+    return recaptchaRef.current.render();
   };
 
   // SMS gönder
@@ -50,7 +59,7 @@ export default function CustomerLogin() {
     setLoading(true);
     setError('');
     try {
-      setupRecaptcha();
+      await setupRecaptcha();
       const formatted = formatPhoneForFirebase(phone);
       const result = await signInWithPhoneNumber(auth, formatted, recaptchaRef.current);
       setConfirmResult(result);
@@ -221,6 +230,9 @@ export default function CustomerLogin() {
 
           {error && <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: `1px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
 
+          {/* reCAPTCHA görünür kutu */}
+          <div id="recaptcha-container" style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}></div>
+
           <div
             onClick={loading ? undefined : handleSendOTP}
             style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: loading ? 'wait' : 'pointer', width: '100%' }}
@@ -332,9 +344,6 @@ export default function CustomerLogin() {
           </div>
         </>}
       </div>
-
-      {/* Invisible reCAPTCHA */}
-      <div id="recaptcha-container"></div>
     </div>
   );
 }
