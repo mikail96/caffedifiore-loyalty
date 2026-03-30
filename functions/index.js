@@ -27,15 +27,15 @@ exports.sendCampaignNotification = onDocumentCreated(
     const tokens = [];
     snapshot.docs.forEach((doc) => {
       const data = doc.data();
-      const fcm = data.fcmTokens || [];
+      const token = data.fcmToken; // Tek token
+
+      if (!token) return;
 
       // Hedef kitle kontrolü
-      if (campaign.target === "all" || campaign.target === data.level) {
-        tokens.push(...fcm);
-      }
-      // "misafir" target = yeni üyeler (misafir seviyesi)
-      if (campaign.target === "misafir" && data.level === "misafir") {
-        tokens.push(...fcm);
+      if (campaign.target === "all" ||
+          campaign.target === data.level ||
+          (campaign.target === "misafir" && data.level === "misafir")) {
+        tokens.push(token);
       }
     });
 
@@ -72,13 +72,10 @@ exports.sendCampaignNotification = onDocumentCreated(
         // Geçersiz tokenları temizle
         response.responses.forEach((resp, idx) => {
           if (!resp.success && resp.error?.code === "messaging/registration-token-not-registered") {
-            // Token geçersiz — Firestore'dan sil
             const badToken = batch[idx];
-            snapshot.docs.forEach(async (doc) => {
-              const data = doc.data();
-              if (data.fcmTokens?.includes(badToken)) {
-                const updatedTokens = data.fcmTokens.filter((t) => t !== badToken);
-                await doc.ref.update({ fcmTokens: updatedTokens });
+            snapshot.docs.forEach(async (d) => {
+              if (d.data().fcmToken === badToken) {
+                await d.ref.update({ fcmToken: null });
               }
             });
           }

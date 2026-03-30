@@ -1,5 +1,5 @@
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase.js';
 import app from '../config/firebase.js';
 
@@ -32,9 +32,9 @@ export async function requestNotificationPermission(customerId) {
     }).catch(() => null);
 
     if (token && customerId) {
-      // Token'ı müşteri dokümanına kaydet
+      // Tek token kaydet (eski tokenları siler)
       await updateDoc(doc(db, 'customers', customerId), {
-        fcmTokens: arrayUnion(token),
+        fcmToken: token,
       }).catch(() => {});
     }
 
