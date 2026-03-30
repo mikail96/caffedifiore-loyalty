@@ -37,13 +37,9 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const { title, body } = payload.notification || {};
-  self.registration.showNotification(title || 'CaffeDiFiore', {
-    body: body || 'Yeni bir bildiriminiz var!',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-64.png',
-    vibrate: [200, 100, 200],
-  });
+  // Firebase notification payload'ı otomatik gösterir
+  // Sadece data-only mesajlar için burada işlem yapılır
+  console.log('Background message:', payload);
 });
 
 // Bildirime tıklayınca uygulamayı aç
