@@ -1,12 +1,15 @@
 {
   "name": "CaffeDiFiore Loyalty App",
   "short_name": "CaffeDiFiore",
-  "description": "Damga topla, ücretsiz kahve kazan!",
+  "description": "Damga topla, ücretsiz kahve kazan! CaffeDiFiore Sadakat Programı.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#030303",
+  "background_color": "#2A1810",
   "theme_color": "#EC671A",
   "orientation": "portrait",
+  "categories": ["food", "lifestyle"],
+  "lang": "tr",
   "icons": [
     {
       "src": "/icons/icon-64.png",

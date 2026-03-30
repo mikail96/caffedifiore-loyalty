@@ -17,3 +17,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 );
+
+// PWA Service Worker kayıt
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // Ana service worker (cache + offline)
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW registration failed:', err));
+
+    // Firebase messaging service worker (push notifications)
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then(reg => console.log('FCM SW registered:', reg.scope))
+      .catch(err => console.log('FCM SW failed:', err));
+  });
+}
