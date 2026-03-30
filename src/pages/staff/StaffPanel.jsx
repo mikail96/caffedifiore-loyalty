@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
 import { collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
@@ -13,7 +14,6 @@ const Stamps = ({ count }) => <div style={{ display: 'flex', gap: 5, justifyCont
 
 export default function StaffPanel() {
   const { userData, logout } = useAuth();
-  const [customers, setCustomers] = useState([]);
   const [sel, setSel] = useState(null);
   const [step, setStep] = useState(null);
   const [cat, setCat] = useState(null);
@@ -27,13 +27,17 @@ export default function StaffPanel() {
   const [tStamp, setTStamp] = useState(0);
   const [tFree, setTFree] = useState(0);
   const [campaigns, setCampaigns] = useState([]);
-  const branch = userData?.branch === 'gokkusagi' ? 'Gökkuşağı AVM' : 'Forum Kampüs AVM';
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const scannerRef = useRef(null);
+  const branchName = userData?.branch === 'gokkusagi' ? 'Gökkuşağı AVM' : 'Forum Kampüs AVM';
   const msg = (m, t = 'success') => { setToast(m); setTt(t); setTimeout(() => setToast(null), 2500); };
 
-  // Müşterileri yükle
+  // Kampanyaları yükle
   useEffect(() => {
-    getDocs(collection(db, 'customers')).then(snap => { const list = snap.docs.map(d => ({ id: d.id, ...d.data() })); const o = { goat: 0, mudavim: 1, misafir: 2 }; list.sort((a, b) => (o[a.level] || 2) - (o[b.level] || 2) || (b.totalStamps || 0) - (a.totalStamps || 0)); setCustomers(list); });
-    getDocs(query(collection(db, 'campaigns'), where('active', '==', true))).then(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() })))).catch(() => {});
+    getDocs(query(collection(db, 'campaigns'), where('active', '==', true)))
+      .then(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(() => {});
   }, []);
 
   // GPS kontrolü
@@ -43,7 +47,7 @@ export default function StaffPanel() {
       const branchDoc = await getDoc(doc(db, 'branches', userData?.branch));
       const branchData = branchDoc.data();
       if (!branchData?.lat || !branchData?.lng) {
-        setGps(true); // Koordinat kaydedilmemişse geçici olarak izin ver
+        setGps(true);
         setGpsDistance(null);
         setGpsChecking(false);
         return;
@@ -56,42 +60,93 @@ export default function StaffPanel() {
           setGps(distM <= STAMP_CONFIG.gpsRadiusMeters);
           setGpsChecking(false);
         },
-        () => { setGps(false); setGpsDistance(null); setGpsChecking(false); msg('Konum alınamadı! İzin verin.', 'error'); },
+        () => { setGps(false); setGpsDistance(null); setGpsChecking(false); msg('Konum alınamadı!', 'error'); },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     } catch (e) { setGps(true); setGpsChecking(false); }
   };
-
   useEffect(() => { checkGPS(); }, []);
 
+  // QR Tarama başlat
+  const startScan = async () => {
+    setScanError('');
+    setScanning(true);
+    try {
+      const scanner = new Html5Qrcode('qr-reader');
+      scannerRef.current = scanner;
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        async (decodedText) => {
+          // QR okundu — kamerayı durdur
+          await scanner.stop().catch(() => {});
+          scannerRef.current = null;
+          setScanning(false);
+          await handleQRResult(decodedText);
+        },
+        () => {} // hata callback (her frame için)
+      );
+    } catch (err) {
+      setScanning(false);
+      setScanError('Kamera açılamadı. Kamera izni verin veya başka uygulama kamerayı kullanıyor olabilir.');
+    }
+  };
+
+  // QR durdur
+  const stopScan = async () => {
+    if (scannerRef.current) {
+      await scannerRef.current.stop().catch(() => {});
+      scannerRef.current = null;
+    }
+    setScanning(false);
+  };
+
+  // QR sonucu işle
+  const handleQRResult = async (qrData) => {
+    // Format: CDF:phone:timestamp:hash
+    if (!qrData.startsWith('CDF:')) {
+      msg('Geçersiz QR kod! CaffeDiFiore QR\'ı okutun.', 'error');
+      return;
+    }
+    const parts = qrData.split(':');
+    if (parts.length < 4) {
+      msg('Geçersiz QR format!', 'error');
+      return;
+    }
+    const phone = parts[1];
+
+    // Müşteriyi telefon numarasıyla bul
+    const custQuery = query(collection(db, 'customers'), where('phone', '==', phone));
+    const custSnap = await getDocs(custQuery);
+    if (custSnap.empty) {
+      msg('Müşteri bulunamadı! Kayıtlı değil.', 'error');
+      return;
+    }
+    const custDoc = custSnap.docs[0];
+    setSel({ id: custDoc.id, ...custDoc.data() });
+    setStep(null);
+    setCat(null);
+    msg('✅ ' + custDoc.data().name + ' bulundu!');
+  };
+
+  // Damga ekle
   const doStamp = async () => {
     if (!sel || !gps || (sel.currentCard || 0) >= 7 || busy) return;
     setBusy(true);
     try {
-      // 15 dakika kontrolü - son damgayı kontrol et
-      const recentQuery = query(
-        collection(db, 'stampLogs'),
-        where('customerId', '==', sel.id),
-        where('type', '==', 'stamp')
-      );
+      const recentQuery = query(collection(db, 'stampLogs'), where('customerId', '==', sel.id), where('type', '==', 'stamp'));
       const recentSnap = await getDocs(recentQuery);
       if (!recentSnap.empty) {
         let lastTime = 0;
-        recentSnap.docs.forEach(d => {
-          const t = d.data().timestamp?.toDate?.()?.getTime() || 0;
-          if (t > lastTime) lastTime = t;
-        });
+        recentSnap.docs.forEach(d => { const t = d.data().timestamp?.toDate?.()?.getTime() || 0; if (t > lastTime) lastTime = t; });
         if (lastTime > 0) {
           const diffMin = (Date.now() - lastTime) / 60000;
           if (diffMin < STAMP_CONFIG.minStampIntervalMinutes) {
-            const remaining = Math.ceil(STAMP_CONFIG.minStampIntervalMinutes - diffMin);
-            msg(`⏱ Son damgadan ${remaining} dk daha beklenmeli!`, 'error');
-            setBusy(false);
-            return;
+            msg(`⏱ Son damgadan ${Math.ceil(STAMP_CONFIG.minStampIntervalMinutes - diffMin)} dk beklenmeli!`, 'error');
+            setBusy(false); return;
           }
         }
       }
-
       const nc = (sel.currentCard || 0) + 1, nt = (sel.totalStamps || 0) + 1;
       let nl = sel.level;
       if (nt >= 40 && sel.level !== 'goat') nl = 'goat';
@@ -100,7 +155,6 @@ export default function StaffPanel() {
       await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'stamp', productCategory: cat, cardBefore: sel.currentCard || 0, cardAfter: nc, timestamp: serverTimestamp() });
       const updated = { ...sel, currentCard: nc, totalStamps: nt, level: nl };
       setSel(updated);
-      setCustomers(p => p.map(c => c.id === sel.id ? updated : c));
       setTStamp(p => p + 1);
       setLogs(p => [{ cn: sel.name, type: 'stamp', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), cat }, ...p]);
       msg(`☕ Damga! ${sel.name} ${nc}/7`);
@@ -116,10 +170,7 @@ export default function StaffPanel() {
     try {
       await updateDoc(doc(db, 'customers', sel.id), { currentCard: 0 });
       await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'free_redeemed', timestamp: serverTimestamp() });
-      const updated = { ...sel, currentCard: 0 };
-      setSel(updated);
-      setCustomers(p => p.map(c => c.id === sel.id ? updated : c));
-      setTFree(p => p + 1);
+      setSel({ ...sel, currentCard: 0 }); setTFree(p => p + 1);
       setLogs(p => [{ cn: sel.name, type: 'free', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
       msg('🎁 Ücretsiz verildi! Kart 0/7');
     } catch (e) { msg('Hata!', 'error'); }
@@ -132,40 +183,44 @@ export default function StaffPanel() {
     try {
       await updateDoc(doc(db, 'customers', sel.id), { goatMonthlyUsed: true });
       await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'goat_monthly', timestamp: serverTimestamp() });
-      const updated = { ...sel, goatMonthlyUsed: true };
-      setSel(updated);
-      setCustomers(p => p.map(c => c.id === sel.id ? updated : c));
+      setSel({ ...sel, goatMonthlyUsed: true });
       setLogs(p => [{ cn: sel.name, type: 'goat', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
       msg('🐐 GOAT aylık ücretsiz verildi!');
     } catch (e) { msg('Hata!', 'error'); }
     setBusy(false);
   };
 
+  // Cleanup scanner on unmount
+  useEffect(() => { return () => { if (scannerRef.current) scannerRef.current.stop().catch(() => {}); }; }, []);
+
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
       {toast && <div style={{ position: 'fixed', top: 40, left: '50%', transform: 'translateX(-50%)', background: tt === 'success' ? COLORS.green : tt === 'error' ? COLORS.red : COLORS.gold, color: COLORS.fioreBeyaz, padding: '12px 24px', borderRadius: 14, fontWeight: 700, fontSize: 14, zIndex: 999, boxShadow: '0 4px 20px rgba(0,0,0,0.25)', maxWidth: 340, textAlign: 'center' }}>{toast}</div>}
 
+      {/* Header */}
       <div style={{ background: 'linear-gradient(180deg, #3D2B1F, #2A1810)', padding: '16px 20px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24 }} /></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 10, color: COLORS.fioreOrange, fontWeight: 800, letterSpacing: 2 }}>PERSONEL</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.fioreBeyaz, marginTop: 2 }}>{userData?.name}</div>
-            <div style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, marginTop: 2 }}>{branch}</div>
+            <div style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, marginTop: 2 }}>{branchName}</div>
           </div>
           <div onClick={logout} style={{ fontSize: 11, color: COLORS.gray, cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '5px 12px', borderRadius: 8 }}>Çıkış</div>
         </div>
       </div>
 
+      {/* İstatistik */}
       <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
         {[[tStamp, 'Damga', '☕', COLORS.fioreOrange], [tFree, 'Ücretsiz', '🎁', COLORS.green]].map(([v, l, ic, c]) => <div key={l} style={{ flex: 1, background: COLORS.fioreBeyaz, borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(3,3,3,0.06)' }}><div style={{ fontSize: 18 }}>{ic}</div><div style={{ fontSize: 22, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 10, color: COLORS.grayDark, fontWeight: 600 }}>{l}</div></div>)}
       </div>
 
+      {/* GPS */}
       <div style={{ padding: '0 16px 10px' }}>
         <div onClick={checkGPS} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: gpsChecking ? COLORS.warmGray : gps ? COLORS.greenBg : 'rgba(239,68,68,0.06)', border: `1.5px solid ${gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red}`, cursor: 'pointer' }}>
           <span style={{ fontSize: 16 }}>{gpsChecking ? '⏳' : gps ? '📍' : '❌'}</span>
-          <div><div style={{ fontSize: 12, fontWeight: 700, color: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }}>{gpsChecking ? 'Konum kontrol ediliyor...' : gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gpsChecking ? '' : gpsDistance !== null ? `${branch} · ${gpsDistance}m` : gps ? `${branch} · Koordinat henüz kaydedilmemiş` : 'İşlem yapılamaz'}</div></div>
-          <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>🔄 Yenile</span>
+          <div><div style={{ fontSize: 12, fontWeight: 700, color: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }}>{gpsChecking ? 'Konum kontrol ediliyor...' : gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gpsChecking ? '' : gpsDistance !== null ? `${branchName} · ${gpsDistance}m` : gps ? `${branchName} · Koordinat henüz kaydedilmemiş` : 'İşlem yapılamaz'}</div></div>
+          <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>🔄</span>
         </div>
       </div>
 
@@ -176,19 +231,56 @@ export default function StaffPanel() {
           <div key={c.id} style={{ background: COLORS.orangeGlow, borderRadius: 10, padding: '10px 14px', marginBottom: 4, border: `1.5px solid ${COLORS.fioreOrange}30` }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.title}</div>
             {c.description && <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 2 }}>{c.description}</div>}
-            <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 2 }}>Hedef: {c.target === 'all' ? 'Tüm Üyeler' : c.target === 'goat' ? 'GOAT' : c.target === 'mudavim' ? 'Müdavim' : 'Yeni Üyeler'}</div>
           </div>
         ))}
       </div>}
 
-      {!sel && <div style={{ padding: '0 16px 16px' }}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>Müşteri QR Okut:</div>
-        {customers.map(c => <div key={c.id} onClick={() => { setSel(c); setStep(null); setCat(null); }} style={{ background: COLORS.fioreBeyaz, borderRadius: 14, padding: '14px', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', border: `1.5px solid ${COLORS.grayLight}` }}>
-          <span style={{ fontSize: 22 }}>{c.level === 'goat' ? '🐐' : c.level === 'mudavim' ? '⭐' : '☕'}</span>
-          <div><div style={{ fontSize: 14, fontWeight: 700 }}>{c.name}</div><div style={{ fontSize: 11, color: COLORS.grayDark }}>{c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} · {c.currentCard || 0}/7</div></div>
-        </div>)}
-      </div>}
+      {/* QR TARAMA — müşteri seçilmemişse */}
+      {!sel && (
+        <div style={{ padding: '0 16px 16px' }}>
+          <Card>
+            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12, textAlign: 'center' }}>📷 Müşteri QR Kodunu Okut</div>
 
+            {/* Kamera görüntüsü */}
+            <div id="qr-reader" style={{
+              width: '100%', borderRadius: 14, overflow: 'hidden', marginBottom: 12,
+              display: scanning ? 'block' : 'none',
+              border: `3px solid ${COLORS.fioreOrange}`,
+            }} />
+
+            {!scanning ? (
+              <Btn onClick={startScan} disabled={!gps}>
+                📷 Kamerayı Aç ve QR Okut
+              </Btn>
+            ) : (
+              <Btn onClick={stopScan} color={COLORS.red}>
+                ✕ Kamerayı Kapat
+              </Btn>
+            )}
+
+            {scanError && (
+              <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '10px 14px', marginTop: 10, border: `1.5px solid ${COLORS.red}` }}>
+                <div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{scanError}</div>
+              </div>
+            )}
+
+            {!gps && !gpsChecking && (
+              <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '10px 14px', marginTop: 10, border: `1.5px solid ${COLORS.red}` }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.red }}>❌ Şube alanında değilsiniz. Kamera açılamaz.</div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 14, textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: COLORS.grayDark, lineHeight: 1.6 }}>
+                Müşteriden telefonundaki QR kodunu göstermesini isteyin.
+                <br />Kamerayı QR koda tutun — otomatik okunacak.
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Müşteri Bulundu */}
       {sel && <div style={{ padding: '0 16px 16px' }}>
         <Card border={`2px solid ${sel.level === 'goat' ? COLORS.gold : COLORS.green}`}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span>✅</span><span style={{ fontSize: 13, fontWeight: 800, color: COLORS.green }}>Müşteri Bulundu</span>{sel.level === 'goat' && <Badge text="🐐 GOAT" color={COLORS.gold} />}</div>
@@ -223,10 +315,11 @@ export default function StaffPanel() {
           </div>}
 
           {!gps && <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '10px 14px', marginTop: 10, border: `1.5px solid ${COLORS.red}` }}><div style={{ fontSize: 12, fontWeight: 700, color: COLORS.red }}>❌ Şube dışındasınız!</div></div>}
-          <div onClick={() => { setSel(null); setStep(null); setCat(null); }} style={{ marginTop: 12, textAlign: 'center', fontSize: 13, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>← Başka müşteri seç</div>
+          <div onClick={() => { setSel(null); setStep(null); setCat(null); }} style={{ marginTop: 12, textAlign: 'center', fontSize: 13, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>📷 Yeni QR Okut</div>
         </Card>
       </div>}
 
+      {/* Son İşlemler */}
       {logs.length > 0 && <div style={{ padding: '0 16px 20px' }}>
         <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Son İşlemler</div>
         {logs.slice(0, 5).map((l, i) => <div key={i} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><div><span style={{ fontSize: 13, fontWeight: 700 }}>{l.cn}</span><span style={{ fontSize: 11, color: COLORS.gray, marginLeft: 8 }}>{l.time}</span></div><Badge text={l.type === 'stamp' ? 'DAMGA' : l.type === 'goat' ? 'GOAT' : 'ÜCRETSİZ'} color={l.type === 'stamp' ? COLORS.fioreOrange : l.type === 'goat' ? COLORS.gold : COLORS.green} /></div>)}
