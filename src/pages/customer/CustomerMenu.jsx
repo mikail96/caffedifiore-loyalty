@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { db } from '../../config/firebase.js';
+import { doc, getDoc } from 'firebase/firestore';
 import { COLORS } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory } from '../../services/menuService.js';
@@ -6,16 +8,20 @@ import { loadMenu, groupByCategory } from '../../services/menuService.js';
 export default function CustomerMenu() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [favorites, setFavorites] = useState(new Set());
-  const [menuData, setMenuData] = useState(MENU_DATA); // Başlangıçta sabit menü
+  const [menuData, setMenuData] = useState(MENU_DATA);
+  const [sizes, setSizes] = useState({ hotSmall: '14oz', hotLarge: '16oz', coldSize: '16oz' });
   const [loading, setLoading] = useState(true);
 
-  // Firestore'dan menü yükle
   useEffect(() => {
     loadMenu().then(items => {
       const grouped = groupByCategory(items);
       if (grouped.length > 0) setMenuData(grouped);
       setLoading(false);
     }).catch(() => setLoading(false));
+    // Boyut ayarlarını yükle
+    getDoc(doc(db, 'settings', 'sizes')).then(snap => {
+      if (snap.exists()) setSizes(snap.data());
+    }).catch(() => {});
   }, []);
 
   const menu = menuData[activeCategory];
@@ -69,12 +75,12 @@ export default function CustomerMenu() {
           <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.fioreSiyah }}>{menu.icon} {menu.category}</div>
           {menu.type === 'hot' && (
             <div style={{ display: 'flex', gap: 4 }}>
-              <span style={{ fontSize: 10, color: COLORS.fioreOrange, fontWeight: 700, background: COLORS.orangeGlow, padding: '3px 8px', borderRadius: 6, border: `1px solid ${COLORS.fioreOrange}30` }}>14oz</span>
-              <span style={{ fontSize: 10, color: COLORS.fioreOrange, fontWeight: 700, background: COLORS.orangeGlow, padding: '3px 8px', borderRadius: 6, border: `1px solid ${COLORS.fioreOrange}30` }}>16oz</span>
+              <span style={{ fontSize: 10, color: COLORS.fioreOrange, fontWeight: 700, background: COLORS.orangeGlow, padding: '3px 8px', borderRadius: 6, border: `1px solid ${COLORS.fioreOrange}30` }}>{sizes.hotSmall}</span>
+              <span style={{ fontSize: 10, color: COLORS.fioreOrange, fontWeight: 700, background: COLORS.orangeGlow, padding: '3px 8px', borderRadius: 6, border: `1px solid ${COLORS.fioreOrange}30` }}>{sizes.hotLarge}</span>
             </div>
           )}
           {menu.type === 'cold' && (
-            <span style={{ fontSize: 10, color: COLORS.blue, fontWeight: 700, background: COLORS.blueBg, padding: '3px 8px', borderRadius: 6, border: `1px solid ${COLORS.blue}30` }}>16oz</span>
+            <span style={{ fontSize: 10, color: COLORS.blue, fontWeight: 700, background: COLORS.blueBg, padding: '3px 8px', borderRadius: 6, border: `1px solid ${COLORS.blue}30` }}>{sizes.coldSize}</span>
           )}
         </div>
 
@@ -113,11 +119,11 @@ export default function CustomerMenu() {
                 {hasDualPrice ? (
                   <div style={{ display: 'flex', gap: 8 }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 9, color: COLORS.gray, fontWeight: 600 }}>14oz</div>
+                      <div style={{ fontSize: 9, color: COLORS.gray, fontWeight: 600 }}>{sizes.hotSmall}</div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>₺{item.price14oz}</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 9, color: COLORS.gray, fontWeight: 600 }}>16oz</div>
+                      <div style={{ fontSize: 9, color: COLORS.gray, fontWeight: 600 }}>{sizes.hotLarge}</div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>₺{item.price16oz}</div>
                     </div>
                   </div>

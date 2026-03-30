@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { COLORS, STAMP_CATEGORIES } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
@@ -44,6 +44,9 @@ export default function AdminPanel() {
   const [adminEdit, setAdminEdit] = useState(null);
   const [adminForm, setAdminForm] = useState({ username: '', password: '', phone: '' });
   const [editingCust, setEditingCust] = useState(null);
+  const [sizes, setSizes] = useState({ hotSmall: '14oz', hotLarge: '16oz', coldSize: '16oz' });
+  const [editingSizes, setEditingSizes] = useState(false);
+  const [sizesForm, setSizesForm] = useState({});
 
   const msg = (m) => { setToast(m); setTimeout(() => setToast(null), 2500); };
 
@@ -69,6 +72,11 @@ export default function AdminPanel() {
       cl.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setCampaigns(cl);
       setMenuItems(menuList);
+      // Boyut ayarlarını yükle
+      try {
+        const sizesDoc = await getDoc(doc(db, 'settings', 'sizes'));
+        if (sizesDoc.exists()) setSizes(sizesDoc.data());
+      } catch (e) {}
     };
     load();
   }, []);
@@ -301,6 +309,37 @@ export default function AdminPanel() {
 
       {/* ===== MENÜ YÖNETİMİ ===== */}
       {tab === 'menu' && <div style={{ padding: '14px 16px' }}>
+        {/* Bardak boyutları */}
+        <C style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editingSizes ? 12 : 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>🥤 Bardak Boyutları</div>
+            {!editingSizes ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, color: COLORS.grayDark }}>☕ {sizes.hotSmall}/{sizes.hotLarge} · 🧊 {sizes.coldSize}</span>
+                <span onClick={() => { setEditingSizes(true); setSizesForm({ ...sizes }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✏️</span>
+              </div>
+            ) : null}
+          </div>
+          {editingSizes && <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.fioreOrange, marginBottom: 8 }}>☕ Sıcak İçecekler</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              <div style={{ flex: 1 }}><Inp label="Küçük Boy" value={sizesForm.hotSmall || ''} onChange={v => setSizesForm(p => ({ ...p, hotSmall: v }))} placeholder="14oz" /></div>
+              <div style={{ flex: 1 }}><Inp label="Büyük Boy" value={sizesForm.hotLarge || ''} onChange={v => setSizesForm(p => ({ ...p, hotLarge: v }))} placeholder="16oz" /></div>
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.blue, marginBottom: 8 }}>🧊 Soğuk İçecekler</div>
+            <Inp label="Boy" value={sizesForm.coldSize || ''} onChange={v => setSizesForm(p => ({ ...p, coldSize: v }))} placeholder="16oz" />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}><Bt onClick={async () => {
+                await setDoc(doc(db, 'settings', 'sizes'), sizesForm);
+                setSizes(sizesForm);
+                setEditingSizes(false);
+                msg('✓ Boyutlar güncellendi!');
+              }} color={COLORS.green} sm>Kaydet</Bt></div>
+              <div style={{ flex: 1 }}><Bt onClick={() => setEditingSizes(false)} color={COLORS.gray} sm>İptal</Bt></div>
+            </div>
+          </div>}
+        </C>
+
         {/* Yeni ürün ekle */}
         <C style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>➕ Yeni Ürün Ekle</div>
@@ -316,7 +355,7 @@ export default function AdminPanel() {
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Fiyat Tipi</div>
             <div style={{ display: 'flex', gap: 5 }}>
-              <div onClick={() => setNewMenu(p => ({ ...p, singleSize: false }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: !newMenu.singleSize ? COLORS.fioreOrange : COLORS.warmGray, color: !newMenu.singleSize ? COLORS.fioreBeyaz : COLORS.grayDark }}>14oz / 16oz</div>
+              <div onClick={() => setNewMenu(p => ({ ...p, singleSize: false }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: !newMenu.singleSize ? COLORS.fioreOrange : COLORS.warmGray, color: !newMenu.singleSize ? COLORS.fioreBeyaz : COLORS.grayDark }}>{sizes.hotSmall} / {sizes.hotLarge}</div>
               <div onClick={() => setNewMenu(p => ({ ...p, singleSize: true }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newMenu.singleSize ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.singleSize ? COLORS.fioreBeyaz : COLORS.grayDark }}>Tek Fiyat</div>
             </div>
           </div>
@@ -324,8 +363,8 @@ export default function AdminPanel() {
             <Inp label="Fiyat (₺)" value={newMenu.price} onChange={v => setNewMenu(p => ({ ...p, price: v }))} placeholder="80" type="number" />
           ) : (
             <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ flex: 1 }}><Inp label="14oz Fiyat (₺)" value={newMenu.price14oz} onChange={v => setNewMenu(p => ({ ...p, price14oz: v }))} placeholder="160" type="number" /></div>
-              <div style={{ flex: 1 }}><Inp label="16oz Fiyat (₺)" value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="170" type="number" /></div>
+              <div style={{ flex: 1 }}><Inp label={sizes.hotSmall + ' Fiyat (₺)'} value={newMenu.price14oz} onChange={v => setNewMenu(p => ({ ...p, price14oz: v }))} placeholder="160" type="number" /></div>
+              <div style={{ flex: 1 }}><Inp label={sizes.hotLarge + ' Fiyat (₺)'} value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="170" type="number" /></div>
             </div>
           )}
           <Bt onClick={async () => {
@@ -359,8 +398,8 @@ export default function AdminPanel() {
                       <Inp label="Fiyat (₺)" value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" />
                     ) : (
                       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                        <div style={{ flex: 1 }}><Inp label="14oz ₺" value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
-                        <div style={{ flex: 1 }}><Inp label="16oz ₺" value={menuEditForm.price16oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
+                        <div style={{ flex: 1 }}><Inp label={sizes.hotSmall + ' ₺'} value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
+                        <div style={{ flex: 1 }}><Inp label={sizes.hotLarge + ' ₺'} value={menuEditForm.price16oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: 8 }}>
