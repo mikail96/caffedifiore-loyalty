@@ -28,7 +28,7 @@ export async function requestNotificationPermission(customerId) {
 
     // FCM token al
     const token = await getToken(messaging, {
-      vapidKey: '' // Blaze'e geçince Firebase Console'dan VAPID key alınacak
+      vapidKey: 'BLqJuecPrKbpICRz1EvbeWM8xXuEgnChSIjiECuX3rlhvz82sbfoAXsD3FeV-iKy4R49CFWNFJhAktQS56Ln1WU' 
     }).catch(() => null);
 
     if (token && customerId) {
