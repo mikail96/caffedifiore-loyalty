@@ -106,8 +106,6 @@ export default function CustomerApp() {
             </div>
           );
         })}
-          </div>
-        ))}
       </div>
 
       {/* Çıkış butonu - header'da */}
