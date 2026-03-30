@@ -128,8 +128,11 @@ export default function CustomerMenu() {
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 14, fontWeight: 800, color: COLORS.fioreOrange }}>
-                    ₺{item.price14oz || item.price16oz || item.price}
+                  <div style={{ textAlign: 'center' }}>
+                    {item.sizeLabel && <div style={{ fontSize: 9, color: COLORS.gray, fontWeight: 600 }}>{item.sizeLabel}</div>}
+                    <div style={{ fontSize: 14, fontWeight: 800, color: COLORS.fioreOrange }}>
+                      ₺{item.price14oz || item.price16oz || item.price}
+                    </div>
                   </div>
                 )}
               </div>

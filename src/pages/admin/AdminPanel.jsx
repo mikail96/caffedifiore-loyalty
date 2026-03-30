@@ -38,7 +38,7 @@ export default function AdminPanel() {
   const [newStaff, setNewStaff] = useState({ name: '', username: '', pin: '', role: 'Barista', branch: '' });
   const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
   const [newBranch, setNewBranch] = useState({ name: '', shortName: '' });
-  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual' });
+  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual', sizeLabel: '' });
   const [editingMenuItem, setEditingMenuItem] = useState(null);
   const [menuEditForm, setMenuEditForm] = useState({});
   const [adminEdit, setAdminEdit] = useState(null);
@@ -367,7 +367,18 @@ export default function AdminPanel() {
             </div>
           )}
           {newMenu.priceType === 'single' && (
-            <Inp label={sizes.coldSize + ' Fiyat (₺)'} value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="185" type="number" />
+            <div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Boyut Etiketi</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {[sizes.hotSmall, sizes.hotLarge, sizes.coldSize].filter((v, i, a) => a.indexOf(v) === i).map(s => (
+                    <div key={s} onClick={() => setNewMenu(p => ({ ...p, sizeLabel: s }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newMenu.sizeLabel === s ? COLORS.blue : COLORS.warmGray, color: newMenu.sizeLabel === s ? COLORS.fioreBeyaz : COLORS.grayDark }}>{s}</div>
+                  ))}
+                  <input placeholder="Özel boy..." value={![sizes.hotSmall, sizes.hotLarge, sizes.coldSize].includes(newMenu.sizeLabel) ? newMenu.sizeLabel : ''} onChange={e => setNewMenu(p => ({ ...p, sizeLabel: e.target.value }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, border: `1.5px solid ${COLORS.grayLight}`, width: 90, outline: 'none' }} />
+                </div>
+              </div>
+              <Inp label={(newMenu.sizeLabel || 'Tek Boyut') + ' Fiyat (₺)'} value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="185" type="number" />
+            </div>
           )}
           {newMenu.priceType === 'none' && (
             <Inp label="Fiyat (₺)" value={newMenu.price} onChange={v => setNewMenu(p => ({ ...p, price: v }))} placeholder="80" type="number" />
@@ -380,11 +391,11 @@ export default function AdminPanel() {
               name: newMenu.name, category: newMenu.category, categoryIcon: newMenu.categoryIcon, type: newMenu.type,
               price14oz: pt === 'dual' ? Number(newMenu.price14oz) || 0 : pt === 'none' ? Number(newMenu.price) || 0 : 0,
               price16oz: pt === 'dual' ? Number(newMenu.price16oz) || 0 : pt === 'single' ? Number(newMenu.price16oz) || 0 : 0,
-              singleSize: pt === 'none', isGoat: false, stampEligible: true, note: '', order: menuItems.length, active: true,
+              singleSize: pt === 'none', sizeLabel: pt === 'single' ? newMenu.sizeLabel : '', isGoat: false, stampEligible: true, note: '', order: menuItems.length, active: true,
             };
             await setDoc(doc(db, 'menuItems', id), data);
             setMenuItems(p => [...p, { id, ...data }]);
-            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual' });
+            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual', sizeLabel: '' });
             msg('✓ Ürün eklendi!');
           }} color={COLORS.green}>✓ Ürün Ekle</Bt>
         </C>
