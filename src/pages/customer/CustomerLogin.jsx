@@ -30,36 +30,44 @@ export default function CustomerLogin() {
     return '+90' + clean;
   };
 
-  // reCAPTCHA başlat — her seferinde yeniden oluştur
-  const setupRecaptcha = () => {
-    // Eski verifier'ı temizle
-    if (recaptchaRef.current) {
-      try { recaptchaRef.current.clear(); } catch (e) {}
-      recaptchaRef.current = null;
-    }
-    // Recaptcha container'ı temizle
-    const container = document.getElementById('recaptcha-container');
-    if (container) container.innerHTML = '';
-    
-    recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'normal',
-      callback: () => { console.log('reCAPTCHA solved'); },
-      'expired-callback': () => { console.log('reCAPTCHA expired'); recaptchaRef.current = null; },
-    });
-    return recaptchaRef.current.render();
-  };
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
 
-  // SMS gönder
+  // reCAPTCHA sayfa yüklenince render et
+  useEffect(() => {
+    if (step !== 'phone') return;
+    const timer = setTimeout(() => {
+      try {
+        if (recaptchaRef.current) {
+          try { recaptchaRef.current.clear(); } catch (e) {}
+        }
+        const container = document.getElementById('recaptcha-container');
+        if (container) container.innerHTML = '';
+
+        recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'normal',
+          callback: () => { setRecaptchaReady(true); },
+          'expired-callback': () => { setRecaptchaReady(false); },
+        });
+        recaptchaRef.current.render();
+      } catch (e) { console.error('reCAPTCHA init error:', e); }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  // SMS gönder — reCAPTCHA zaten çözülmüş olmalı
   const handleSendOTP = async () => {
     const clean = phone.replace(/\D/g, '');
     if (clean.length < 10) {
       setError('Geçerli bir telefon numarası girin');
       return;
     }
+    if (!recaptchaReady) {
+      setError('Önce güvenlik doğrulamasını (robot değilim) tamamlayın.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await setupRecaptcha();
       const formatted = formatPhoneForFirebase(phone);
       const result = await signInWithPhoneNumber(auth, formatted, recaptchaRef.current);
       setConfirmResult(result);
@@ -230,14 +238,18 @@ export default function CustomerLogin() {
 
           {error && <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: `1px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
 
-          {/* reCAPTCHA görünür kutu */}
-          <div id="recaptcha-container" style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}></div>
+          {/* reCAPTCHA - önce bunu çöz */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Güvenlik Doğrulaması</div>
+            <div id="recaptcha-container" style={{ display: 'flex', justifyContent: 'center' }}></div>
+            {recaptchaReady && <div style={{ fontSize: 11, color: COLORS.green, fontWeight: 700, marginTop: 6, textAlign: 'center' }}>✓ Doğrulama tamamlandı</div>}
+          </div>
 
           <div
-            onClick={loading ? undefined : handleSendOTP}
-            style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: loading ? 'wait' : 'pointer', width: '100%' }}
+            onClick={(loading || !recaptchaReady) ? undefined : handleSendOTP}
+            style={{ background: (loading || !recaptchaReady) ? COLORS.grayLight : COLORS.fioreOrange, color: (loading || !recaptchaReady) ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: (loading || !recaptchaReady) ? 'not-allowed' : 'pointer', width: '100%', opacity: recaptchaReady ? 1 : 0.5 }}
           >
-            {loading ? 'Gönderiliyor...' : 'SMS Kodu Gönder'}
+            {loading ? 'Gönderiliyor...' : recaptchaReady ? 'SMS Kodu Gönder' : 'Önce doğrulamayı tamamlayın'}
           </div>
 
           <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: COLORS.gray, cursor: 'pointer' }}>← Geri</div>
