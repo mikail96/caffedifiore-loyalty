@@ -21,12 +21,14 @@ export default function CustomerApp() {
   const [notifBanner, setNotifBanner] = useState(null);
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
 
-  // Bildirim izni iste (ilk açılışta)
+  // Bildirim izni ve token kayıt
   useEffect(() => {
     if (!user?.uid) return;
     const status = getNotificationStatus();
-    if (status === 'default' && isNotificationSupported()) {
-      // 3 saniye sonra izin popup'ı göster
+    if (status === 'granted') {
+      // İzin zaten verilmiş — token'ı güncelle
+      requestNotificationPermission(user.uid);
+    } else if (status === 'default' && isNotificationSupported()) {
       const timer = setTimeout(() => setShowNotifPrompt(true), 3000);
       return () => clearTimeout(timer);
     }
