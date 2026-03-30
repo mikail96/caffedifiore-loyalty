@@ -58,36 +58,4 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push notification received
-self.addEventListener('push', (event) => {
-  let data = { title: 'CaffeDiFiore', body: 'Yeni bir bildiriminiz var!' };
-  try {
-    data = event.data.json();
-  } catch (e) {
-    data.body = event.data?.text() || data.body;
-  }
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'CaffeDiFiore', {
-      body: data.body,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-64.png',
-      tag: data.tag || 'cdf-notification',
-      data: data.url || '/',
-      vibrate: [200, 100, 200],
-    })
-  );
-});
-
-// Notification click — open app
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      if (clientList.length > 0) {
-        return clientList[0].focus();
-      }
-      return clients.openWindow(event.notification.data || '/');
-    })
-  );
-});
+// Push bildirimleri firebase-messaging-sw.js tarafından yönetilir
