@@ -55,7 +55,6 @@ exports.sendCampaignNotification = onDocumentCreated(
       try {
         const response = await messaging.sendEachForMulticast({
           tokens: batch,
-          notification: { title, body },
           webpush: {
             notification: {
               title,
