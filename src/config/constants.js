@@ -25,6 +25,12 @@ export const COLORS = {
   purple: '#8B5CF6',
 };
 
+// Font aileleri
+export const FONTS = {
+  heading: "'Playfair Display', Georgia, serif",
+  body: "'DM Sans', -apple-system, sans-serif",
+};
+
 // Seviye Eşikleri
 export const LEVELS = {
   misafir: { min: 0, max: 15, label: 'Fiore Misafir', icon: '☕', color: COLORS.gray },
