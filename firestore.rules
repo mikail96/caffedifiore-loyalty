@@ -1,47 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Müşteriler
-    match /customers/{customerId} {
-      allow read: if request.auth != null && request.auth.uid == customerId;
-      allow create: if request.auth != null && request.auth.uid == customerId;
-      allow update: if request.auth != null && request.auth.uid == customerId;
-    }
-
-    // Personel - giriş için okuma gerekli
-    match /staff/{staffId} {
+    // Test aşaması — tüm okuma/yazma açık
+    // Canlıya tam geçince sıkılaştırılacak
+    match /{document=**} {
       allow read: if true;
-      allow write: if false;
-    }
-
-    // Şubeler
-    match /branches/{branchId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // Ayarlar - admin giriş kontrolü için okuma
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // Damga logları
-    match /stampLogs/{logId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // Kampanyalar
-    match /campaigns/{campaignId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // Menü
-    match /menu/{itemId} {
-      allow read: if true;
-      allow write: if false;
+      allow write: if true;
     }
   }
 }
