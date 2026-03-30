@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { COLORS, STAMP_CATEGORIES } from '../../config/constants.js';
+import { MENU_DATA } from '../../config/menu-data.js';
 
 const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>{children}</div>;
 const B = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 800, color: COLORS.fioreBeyaz, background: color, padding: '3px 10px', borderRadius: 10 }}>{text}</span>;
@@ -37,6 +38,9 @@ export default function AdminPanel() {
   const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
   const [newBranch, setNewBranch] = useState({ name: '', shortName: '' });
   const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', type: 'hot' });
+  const [editingPrice, setEditingPrice] = useState(null);
+  const [priceForm, setPriceForm] = useState({ price14oz: '', price16oz: '' });
+  const [priceOverrides, setPriceOverrides] = useState({});
   const [adminEdit, setAdminEdit] = useState(null);
   const [adminForm, setAdminForm] = useState({ username: '', password: '', phone: '' });
   const [editingCust, setEditingCust] = useState(null);
@@ -63,6 +67,13 @@ export default function AdminPanel() {
       cl.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setCampaigns(cl);
       setMenuItems(menuSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      // Fiyat override'larını yükle
+      try {
+        const priceSnap = await getDocs(collection(db, 'menuPrices'));
+        const po = {};
+        priceSnap.docs.forEach(d => { po[d.id] = d.data(); });
+        setPriceOverrides(po);
+      } catch (e) {}
     };
     load();
   }, []);
@@ -295,15 +306,22 @@ export default function AdminPanel() {
 
       {/* ===== MENÜ YÖNETİMİ ===== */}
       {tab === 'menu' && <div style={{ padding: '14px 16px' }}>
+        {/* Yeni ürün ekle */}
         <C style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>➕ Yeni Ürün Ekle</div>
           <Inp label="Ürün Adı" value={newMenu.name} onChange={v => setNewMenu(p => ({ ...p, name: v }))} placeholder="Caramel Latte" />
-          <Inp label="Kategori" value={newMenu.category} onChange={v => setNewMenu(p => ({ ...p, category: v }))} placeholder="Espresso & More" />
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Kategori</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {MENU_DATA.map(cat => (
+                <div key={cat.category} onClick={() => setNewMenu(p => ({ ...p, category: cat.category, type: cat.type }))} style={{ padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: newMenu.category === cat.category ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.category === cat.category ? COLORS.fioreBeyaz : COLORS.grayDark }}>{cat.icon} {cat.category}</div>
+              ))}
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ flex: 1 }}><Inp label="14oz Fiyat (₺)" value={newMenu.price14oz} onChange={v => setNewMenu(p => ({ ...p, price14oz: v }))} placeholder="160" type="number" /></div>
             <div style={{ flex: 1 }}><Inp label="16oz Fiyat (₺)" value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="170" type="number" /></div>
           </div>
-          <div style={{ marginBottom: 12 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Tür</div><div style={{ display: 'flex', gap: 5 }}>{[['hot', '☕ Sıcak'], ['cold', '🧊 Soğuk'], ['extra', '➕ Ekstra']].map(([v, l]) => <div key={v} onClick={() => setNewMenu(p => ({ ...p, type: v }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newMenu.type === v ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.type === v ? COLORS.fioreBeyaz : COLORS.grayDark }}>{l}</div>)}</div></div>
           <Bt onClick={async () => {
             if (!newMenu.name || !newMenu.category) { msg('Ad ve kategori girin!'); return; }
             const data = { name: newMenu.name, category: newMenu.category, type: newMenu.type, price14oz: Number(newMenu.price14oz) || 0, price16oz: Number(newMenu.price16oz) || 0, active: true, createdAt: serverTimestamp() };
@@ -314,15 +332,69 @@ export default function AdminPanel() {
           }} color={COLORS.green}>✓ Ürün Ekle</Bt>
         </C>
 
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>📋 Menü ({menuItems.length} ürün)</div>
-        <div style={{ fontSize: 11, color: COLORS.grayDark, marginBottom: 10, background: COLORS.warmGray, padding: '8px 12px', borderRadius: 10 }}>ℹ️ Sabit menü kodda tanımlı. Buradan eklenen ürünler ekstra olarak gösterilir. Fiyat güncellemeleri için mevcut ürünleri buraya ekleyip eski listeden çıkaracağız.</div>
-        {menuItems.map(m => <div key={m.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '12px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div><div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div><div style={{ fontSize: 10, color: COLORS.gray }}>{m.category} · {m.type === 'hot' ? '☕' : m.type === 'cold' ? '🧊' : '➕'}</div></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{m.price14oz ? `₺${m.price14oz}` : ''}{m.price14oz && m.price16oz ? ' / ' : ''}{m.price16oz ? `₺${m.price16oz}` : ''}</span>
-            <span onClick={async () => { await deleteDoc(doc(db, 'menu', m.id)); setMenuItems(p => p.filter(x => x.id !== m.id)); msg('Silindi'); }} style={{ fontSize: 14, cursor: 'pointer' }}>🗑️</span>
+        {/* Mevcut menü - kategoriye göre */}
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>📋 Mevcut Menü — Fiyat Düzenle</div>
+        {MENU_DATA.map(cat => (
+          <div key={cat.category} style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange, marginBottom: 6 }}>{cat.icon} {cat.category}</div>
+            {cat.items.map(item => {
+              const key = `${cat.category}::${item.name}`;
+              const override = priceOverrides[key.replace(/[\/\s]/g, '_')];
+              const p14 = override?.price14oz ?? item.price14oz ?? '';
+              const p16 = override?.price16oz ?? item.price16oz ?? '';
+              const isEditing = editingPrice === key;
+
+              return <div key={item.name} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, border: override ? `1.5px solid ${COLORS.green}30` : 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700 }}>{item.name}</span>
+                    {item.isGoat && <B text="#GOAT" color={COLORS.gold} />}
+                    {override && <span style={{ fontSize: 9, color: COLORS.green, marginLeft: 6 }}>✓ güncellendi</span>}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>
+                      {p14 ? `₺${p14}` : ''}{p14 && p16 ? ' / ' : ''}{p16 ? `₺${p16}` : ''}
+                    </span>
+                    <span onClick={() => {
+                      if (isEditing) { setEditingPrice(null); } else {
+                        setEditingPrice(key);
+                        setPriceForm({ price14oz: String(p14 || ''), price16oz: String(p16 || '') });
+                      }
+                    }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>{isEditing ? '✕' : '✏️'}</span>
+                  </div>
+                </div>
+                {isEditing && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${COLORS.grayLight}` }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <div style={{ flex: 1 }}><Inp label="14oz ₺" value={priceForm.price14oz} onChange={v => setPriceForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
+                      <div style={{ flex: 1 }}><Inp label="16oz ₺" value={priceForm.price16oz} onChange={v => setPriceForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
+                    </div>
+                    <Bt onClick={async () => {
+                      const docId = key.replace(/[\/\s]/g, '_');
+                      const data = { name: item.name, category: cat.category, price14oz: Number(priceForm.price14oz) || 0, price16oz: Number(priceForm.price16oz) || 0, updatedAt: serverTimestamp() };
+                      await setDoc(doc(db, 'menuPrices', docId), data);
+                      setPriceOverrides(p => ({ ...p, [docId]: data }));
+                      setEditingPrice(null);
+                      msg(`✓ ${item.name} fiyatı güncellendi!`);
+                    }} color={COLORS.green} sm>✓ Fiyatı Kaydet</Bt>
+                  </div>
+                )}
+              </div>;
+            })}
           </div>
-        </div>)}
+        ))}
+
+        {/* Firestore'dan eklenen ekstra ürünler */}
+        {menuItems.length > 0 && <>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, marginTop: 14 }}>🆕 Eklenen Ürünler</div>
+          {menuItems.map(m => <div key={m.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '12px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div><div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div><div style={{ fontSize: 10, color: COLORS.gray }}>{m.category}</div></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{m.price14oz ? `₺${m.price14oz}` : ''}{m.price14oz && m.price16oz ? ' / ' : ''}{m.price16oz ? `₺${m.price16oz}` : ''}</span>
+              <span onClick={async () => { await deleteDoc(doc(db, 'menu', m.id)); setMenuItems(p => p.filter(x => x.id !== m.id)); msg('Silindi'); }} style={{ fontSize: 14, cursor: 'pointer' }}>🗑️</span>
+            </div>
+          </div>)}
+        </>}
       </div>}
 
       {/* ===== İŞLEM LOG ===== */}
