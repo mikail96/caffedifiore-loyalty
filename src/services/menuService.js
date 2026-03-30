@@ -31,7 +31,7 @@ export async function seedMenu() {
         category: cat.category,
         categoryIcon: cat.icon,
         type: cat.type,
-        price14oz: item.price14oz || 0,
+        price14oz: item.price14oz || item.price || 0,
         price16oz: item.price16oz || 0,
         singleSize: item.singleSize || false,
         isGoat: item.isGoat || false,
