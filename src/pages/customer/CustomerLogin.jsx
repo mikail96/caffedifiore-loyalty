@@ -20,6 +20,7 @@ export default function CustomerLogin() {
   const [confirmResult, setConfirmResult] = useState(null);
   const otpRefs = useRef([]);
   const recaptchaRef = useRef(null);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
 
   // Telefon numarasını +90 formatına çevir
   const formatPhoneForFirebase = (p) => {
@@ -29,8 +30,6 @@ export default function CustomerLogin() {
     if (clean.length === 10) return '+90' + clean;
     return '+90' + clean;
   };
-
-  const [recaptchaReady, setRecaptchaReady] = useState(false);
 
   // reCAPTCHA sayfa yüklenince render et
   useEffect(() => {
