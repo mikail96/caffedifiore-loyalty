@@ -1,337 +1,205 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../config/firebase.js';
-import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, increment } from 'firebase/firestore';
 import { COLORS } from '../../config/constants.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
+// Telefon numarasını email formatına çevir
+const phoneToEmail = (phone) => {
+  const clean = phone.replace(/\D/g, '');
+  const num = clean.startsWith('0') ? clean.slice(1) : clean;
+  return `${num}@caffedifiore.app`;
+};
+
+const inputStyle = { width: '100%', padding: '14px', borderRadius: 12, border: `2px solid ${COLORS.grayLight}`, fontSize: 15, fontWeight: 600, boxSizing: 'border-box', outline: 'none', textAlign: 'center', letterSpacing: 1 };
+
 export default function CustomerLogin() {
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
-  const [step, setStep] = useState('phone'); // phone | otp | register
+  const [mode, setMode] = useState('login'); // login | register
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [birth, setBirth] = useState('');
   const [refInput, setRefInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [confirmResult, setConfirmResult] = useState(null);
-  const otpRefs = useRef([]);
-  const recaptchaRef = useRef(null);
+  const [showPass, setShowPass] = useState(false);
 
-  // Telefon numarasını +90 formatına çevir
-  const formatPhoneForFirebase = (p) => {
-    const clean = p.replace(/\D/g, '');
-    if (clean.startsWith('90') && clean.length === 12) return '+' + clean;
-    if (clean.startsWith('0') && clean.length === 11) return '+9' + clean;
-    if (clean.length === 10) return '+90' + clean;
-    return '+90' + clean;
-  };
-
-  // SMS gönder
-  const handleSendOTP = async () => {
+  // Giriş yap
+  const handleLogin = async () => {
     const clean = phone.replace(/\D/g, '');
-    if (clean.length < 10) {
-      setError('Geçerli bir telefon numarası girin');
-      return;
-    }
-    setLoading(true);
-    setError('');
+    if (clean.length < 10) { setError('Geçerli bir telefon numarası girin'); return; }
+    if (password.length < 4) { setError('Şifrenizi girin (en az 4 karakter)'); return; }
+    setLoading(true); setError('');
     try {
-      // Her seferinde temiz reCAPTCHA oluştur
-      if (recaptchaRef.current) {
-        try { recaptchaRef.current.clear(); } catch(e) {}
-      }
-      const container = document.getElementById('recaptcha-box');
-      if (container) container.innerHTML = '';
-
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-box', { size: 'invisible' });
-      recaptchaRef.current = verifier;
-
-      const formatted = formatPhoneForFirebase(phone);
-      const result = await signInWithPhoneNumber(auth, formatted, verifier);
-      setConfirmResult(result);
-      setStep('otp');
+      const email = phoneToEmail(phone);
+      await signInWithEmailAndPassword(auth, email, password);
+      await refreshUser();
+      navigate('/musteri');
     } catch (err) {
-      console.error('SMS error:', err);
-      if (err.code === 'auth/too-many-requests') {
-        setError('Çok fazla deneme. Lütfen biraz bekleyin.');
-      } else if (err.code === 'auth/invalid-phone-number') {
-        setError('Geçersiz telefon numarası. Başında 5 ile başlayan 10 haneli numara girin.');
-      } else if (err.code === 'auth/quota-exceeded') {
-        setError('SMS kotası doldu. Lütfen daha sonra tekrar deneyin.');
-      } else if (err.code === 'auth/captcha-check-failed') {
-        setError('Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.');
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        setError('Bu numarayla hesap bulunamadı veya şifre yanlış.');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Şifre yanlış. Tekrar deneyin.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Çok fazla deneme. Biraz bekleyin.');
       } else {
-        setError(`Hata: ${err.code || 'bilinmiyor'} — ${err.message || 'SMS gönderilemedi'}`);
+        setError(`Giriş hatası: ${err.message}`);
       }
     }
     setLoading(false);
   };
 
-  // OTP doğrula
-  const handleVerifyOTP = async () => {
-    const code = otp.join('');
-    if (code.length !== 6) {
-      setError('6 haneli kodu girin');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const result = await confirmResult.confirm(code);
-      const uid = result.user.uid;
-
-      // Müşteri var mı kontrol et
-      const customerDoc = await getDoc(doc(db, 'customers', uid));
-      if (customerDoc.exists()) {
-        // Mevcut müşteri — ana sayfaya yönlendir
-        await refreshUser();
-        navigate('/musteri');
-      } else {
-        // Yeni müşteri — kayıt ekranı
-        setStep('register');
-      }
-    } catch (err) {
-      console.error('OTP error:', err);
-      setError('Kod hatalı. Tekrar deneyin.');
-    }
-    setLoading(false);
-  };
-
-  // Yeni müşteri kayıt
+  // Kayıt ol
   const handleRegister = async () => {
-    if (!name.trim() || name.trim().length < 3) {
-      setError('Adınızı ve soyadınızı girin');
-      return;
-    }
-    setLoading(true);
-    setError('');
+    const clean = phone.replace(/\D/g, '');
+    if (clean.length < 10) { setError('Geçerli bir telefon numarası girin'); return; }
+    if (!name.trim() || name.trim().length < 3) { setError('Adınızı ve soyadınızı girin'); return; }
+    if (password.length < 6) { setError('Şifre en az 6 karakter olmalı'); return; }
+    setLoading(true); setError('');
     try {
-      const uid = auth.currentUser.uid;
-      const phoneNumber = auth.currentUser.phoneNumber;
+      const email = phoneToEmail(phone);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = cred.user.uid;
+      const phoneFormatted = '+90' + (clean.startsWith('0') ? clean.slice(1) : clean);
 
-      // Referans kodu oluştur (ismin ilk 5 harfi + rastgele)
+      // Referans kodu oluştur
       const refCode = name.trim().toUpperCase().replace(/\s/g, '').slice(0, 5) +
         Math.random().toString(36).slice(2, 6).toUpperCase();
 
-      // Davet kodu girilmişse referans sahibini bul
+      // Davet kodu kontrolü
       let referredByUid = null;
       if (refInput.trim()) {
-        const refQuery = query(
-          collection(db, 'customers'),
-          where('referralCode', '==', refInput.trim().toUpperCase())
-        );
+        const refQuery = query(collection(db, 'customers'), where('referralCode', '==', refInput.trim().toUpperCase()));
         const refSnap = await getDocs(refQuery);
         if (!refSnap.empty) {
           referredByUid = refSnap.docs[0].id;
-          // Referans sahibinin sayacını artır
-          await updateDoc(doc(db, 'customers', referredByUid), {
-            referralCount: increment(1),
-          });
+          await updateDoc(doc(db, 'customers', referredByUid), { referralCount: increment(1) });
         }
       }
 
+      // Müşteri dökümanı oluştur
       await setDoc(doc(db, 'customers', uid), {
         name: name.trim(),
-        phone: phoneNumber,
+        phone: phoneFormatted,
         birthDate: birth || null,
         level: 'misafir',
-        totalStamps: 0,
         currentCard: 0,
+        totalStamps: 0,
         goatMonthlyUsed: false,
-        goatMonthlyResetDate: null,
         referralCode: refCode,
         referredBy: referredByUid,
         referralCount: 0,
-        favoriteItems: [],
-        qrSecret: Math.random().toString(36).slice(2) + Date.now().toString(36),
+        qrSecret: Math.random().toString(36).slice(2, 15),
         createdAt: serverTimestamp(),
       });
 
       await refreshUser();
       navigate('/musteri');
     } catch (err) {
-      console.error('Register error:', err);
-      setError('Kayıt sırasında hata oluştu.');
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Bu telefon numarası zaten kayıtlı. Giriş yapın.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Şifre çok zayıf. En az 6 karakter girin.');
+      } else {
+        setError(`Kayıt hatası: ${err.message}`);
+      }
     }
     setLoading(false);
   };
 
-  // OTP input handler
-  const handleOtpChange = (index, value) => {
-    if (value.length > 1) value = value.slice(-1);
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-    if (value && index < 5) otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 14px',
-    borderRadius: 12,
-    border: `1.5px solid ${COLORS.grayLight}`,
-    fontSize: 14,
-    boxSizing: 'border-box',
-    background: COLORS.cream,
-    outline: 'none',
-  };
-
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.fioreSiyah, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
-      {/* Header */}
-      <div style={{ padding: '50px 24px 24px', textAlign: 'center' }}>
+    <div style={{ minHeight: '100vh', background: COLORS.fioreSiyah }}>
+      {/* Logo */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 20px 10px' }}>
         <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 40 }} />
-        <div style={{ fontSize: 13, color: COLORS.fioreOrange, fontStyle: 'italic', fontFamily: 'Georgia, serif', marginTop: 8, letterSpacing: 2 }}>Sei Perfetto</div>
       </div>
+      <div style={{ textAlign: 'center', color: COLORS.fioreOrange, fontStyle: 'italic', fontSize: 13, fontWeight: 500, marginBottom: 20 }}>Sei Perfetto</div>
 
-      {/* Content card */}
-      <div style={{ background: COLORS.fioreBeyaz, borderRadius: '24px 24px 0 0', minHeight: 'calc(100vh - 140px)', padding: '28px 24px' }}>
+      <div style={{ background: COLORS.fioreBeyaz, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 130px)', padding: '28px 24px' }}>
+        {/* Başlık */}
+        <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.fioreSiyah, marginBottom: 4 }}>
+          {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+        </div>
+        <div style={{ fontSize: 13, color: COLORS.grayDark, marginBottom: 24, lineHeight: 1.5 }}>
+          {mode === 'login' ? 'Telefon numaran ve şifrenle giriş yap' : 'Yeni hesap oluştur, damga toplamaya başla!'}
+        </div>
 
-        {/* STEP 1: Phone */}
-        {step === 'phone' && <>
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Giriş Yap / Kayıt Ol</div>
-          <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 24 }}>Telefon numaranı gir — hesabın varsa giriş yapar, yoksa yeni hesap oluşturur</div>
+        {/* Telefon */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: COLORS.fioreSiyah }}>Telefon Numarası</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ padding: '14px 12px', background: COLORS.warmGray, borderRadius: 12, fontWeight: 700, fontSize: 14, color: COLORS.grayDark }}>+90</div>
+            <input type="tel" placeholder="5XX XXX XX XX" value={phone} onChange={e => setPhone(e.target.value)} style={inputStyle} maxLength={11} />
+          </div>
+        </div>
 
+        {/* İsim — sadece kayıt */}
+        {mode === 'register' && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: COLORS.fioreSiyah }}>Ad Soyad</div>
+            <input placeholder="Adınız Soyadınız" value={name} onChange={e => setName(e.target.value)} style={{ ...inputStyle, textAlign: 'left', letterSpacing: 0 }} />
+          </div>
+        )}
+
+        {/* Şifre */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: COLORS.fioreSiyah }}>Şifre</div>
+          <div style={{ position: 'relative' }}>
+            <input type={showPass ? 'text' : 'password'} placeholder={mode === 'register' ? 'En az 6 karakter' : 'Şifreniz'} value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, textAlign: 'left', letterSpacing: 0, paddingRight: 44 }} />
+            <span onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: 16 }}>{showPass ? '🙈' : '👁️'}</span>
+          </div>
+        </div>
+
+        {/* Doğum tarihi + referans — sadece kayıt */}
+        {mode === 'register' && <>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: COLORS.fioreSiyah }}>Doğum Tarihi <span style={{ color: COLORS.gray, fontWeight: 400 }}>(opsiyonel)</span></div>
+            <input type="date" value={birth} onChange={e => setBirth(e.target.value)} style={{ ...inputStyle, textAlign: 'left', letterSpacing: 0 }} />
+          </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Telefon Numarası</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ ...inputStyle, width: 70, textAlign: 'center', color: COLORS.gray, flexShrink: 0 }}>+90</div>
-              <input
-                type="tel"
-                placeholder="5XX XXX XX XX"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                style={inputStyle}
-                maxLength={15}
-              />
-            </div>
-          </div>
-
-          {error && <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: `1px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
-
-          <div id="recaptcha-box"></div>
-
-          <div
-            onClick={loading ? undefined : handleSendOTP}
-            style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: loading ? 'wait' : 'pointer', width: '100%' }}
-          >
-            {loading ? 'Gönderiliyor...' : 'SMS Kodu Gönder'}
-          </div>
-
-          <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: COLORS.gray, cursor: 'pointer' }}>← Geri</div>
-
-          {/* Bilgi */}
-          <div style={{ marginTop: 32, padding: '16px', background: COLORS.cream, borderRadius: 14 }}>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              {[['☕', "7'de 1\nÜcretsiz"], ['🐐', "GOAT\nAyrıcalık"], ['📢', "Özel\nKampanya"]].map(([ic, tx]) =>
-                <div key={tx} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 24 }}>{ic}</div>
-                  <div style={{ fontSize: 10, color: COLORS.grayDark, whiteSpace: 'pre-line', lineHeight: 1.3, marginTop: 4, fontWeight: 600 }}>{tx}</div>
-                </div>
-              )}
-            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: COLORS.fioreSiyah }}>Davet Kodu <span style={{ color: COLORS.gray, fontWeight: 400 }}>(opsiyonel)</span></div>
+            <input placeholder="Arkadaşınızın kodu" value={refInput} onChange={e => setRefInput(e.target.value.toUpperCase())} style={{ ...inputStyle, letterSpacing: 2 }} maxLength={10} />
           </div>
         </>}
 
-        {/* STEP 2: OTP */}
-        {step === 'otp' && <>
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Doğrulama Kodu</div>
-          <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 24 }}>
-            {formatPhoneForFirebase(phone)} numarasına gönderilen 6 haneli kodu girin
+        {/* Hata */}
+        {error && <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: `1px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
+
+        {/* Buton */}
+        <div
+          onClick={loading ? undefined : (mode === 'login' ? handleLogin : handleRegister)}
+          style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: loading ? 'wait' : 'pointer', width: '100%' }}
+        >
+          {loading ? 'İşleniyor...' : mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+        </div>
+
+        {/* Mod değiştir */}
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          {mode === 'login' ? (
+            <span style={{ fontSize: 13, color: COLORS.grayDark }}>Hesabın yok mu? <span onClick={() => { setMode('register'); setError(''); }} style={{ color: COLORS.fioreOrange, fontWeight: 700, cursor: 'pointer' }}>Kayıt Ol</span></span>
+          ) : (
+            <span style={{ fontSize: 13, color: COLORS.grayDark }}>Hesabın var mı? <span onClick={() => { setMode('login'); setError(''); }} style={{ color: COLORS.fioreOrange, fontWeight: 700, cursor: 'pointer' }}>Giriş Yap</span></span>
+          )}
+        </div>
+
+        <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: COLORS.gray, cursor: 'pointer' }}>← Geri</div>
+
+        {/* Alt bilgi */}
+        <div style={{ marginTop: 32, padding: '16px', background: COLORS.cream, borderRadius: 14 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            {[['🐐', '7\'de 1', 'Ücretsiz'], ['🏆', 'GOAT', 'Ayrıcalık'], ['🎁', 'Özel', 'Kampanya']].map(([ic, t1, t2]) => (
+              <div key={t1} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 28 }}>{ic}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.fioreSiyah, marginTop: 4 }}>{t1}</div>
+                <div style={{ fontSize: 10, color: COLORS.grayDark }}>{t2}</div>
+              </div>
+            ))}
           </div>
-
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
-            {otp.map((digit, i) =>
-              <input
-                key={i}
-                ref={el => otpRefs.current[i] = el}
-                type="tel"
-                maxLength={1}
-                value={digit}
-                onChange={e => handleOtpChange(i, e.target.value)}
-                onKeyDown={e => handleOtpKeyDown(i, e)}
-                style={{
-                  width: 44, height: 52, borderRadius: 10,
-                  border: `2px solid ${digit ? COLORS.fioreOrange : COLORS.grayLight}`,
-                  textAlign: 'center', fontSize: 20, fontWeight: 800,
-                  background: digit ? COLORS.orangeSoft : COLORS.fioreBeyaz,
-                  outline: 'none',
-                }}
-              />
-            )}
-          </div>
-
-          {error && <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: `1px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
-
-          <div
-            onClick={loading ? undefined : handleVerifyOTP}
-            style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: loading ? 'wait' : 'pointer' }}
-          >
-            {loading ? 'Doğrulanıyor...' : '✓ Doğrula'}
-          </div>
-
-          <div onClick={() => { setStep('phone'); setOtp(['','','','','','']); setError(''); }} style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: COLORS.gray, cursor: 'pointer' }}>← Numarayı Değiştir</div>
-        </>}
-
-        {/* STEP 3: Register */}
-        {step === 'register' && <>
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Hoş Geldin! 🎉</div>
-          <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 24 }}>Sadakat programına katılmak için bilgilerini gir</div>
-
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Ad Soyad *</div>
-            <input
-              placeholder="Adınız ve soyadınız"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Doğum Tarihi (isteğe bağlı)</div>
-            <input
-              type="date"
-              value={birth}
-              onChange={e => setBirth(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Davet Kodu (isteğe bağlı)</div>
-            <input
-              placeholder="Arkadaşından aldığın kodu gir"
-              value={refInput}
-              onChange={e => setRefInput(e.target.value.toUpperCase())}
-              style={{ ...inputStyle, letterSpacing: 2 }}
-              autoCapitalize="characters"
-            />
-            <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 4 }}>
-              Davet kodun varsa gir — arkadaşın bonus damga kazansın!
-            </div>
-          </div>
-
-          {error && <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, border: `1px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
-
-          <div
-            onClick={loading ? undefined : handleRegister}
-            style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: loading ? 'wait' : 'pointer' }}
-          >
-            {loading ? 'Kaydediliyor...' : '✓ Kayıt Ol ve Başla'}
-          </div>
-        </>}
+        </div>
       </div>
     </div>
   );
