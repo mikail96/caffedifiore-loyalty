@@ -38,7 +38,7 @@ export default function AdminPanel() {
   const [newStaff, setNewStaff] = useState({ name: '', username: '', pin: '', role: 'Barista', branch: '' });
   const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
   const [newBranch, setNewBranch] = useState({ name: '', shortName: '' });
-  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', singleSize: false });
+  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual' });
   const [editingMenuItem, setEditingMenuItem] = useState(null);
   const [menuEditForm, setMenuEditForm] = useState({});
   const [adminEdit, setAdminEdit] = useState(null);
@@ -354,31 +354,37 @@ export default function AdminPanel() {
           </div>
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Fiyat Tipi</div>
-            <div style={{ display: 'flex', gap: 5 }}>
-              <div onClick={() => setNewMenu(p => ({ ...p, singleSize: false }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: !newMenu.singleSize ? COLORS.fioreOrange : COLORS.warmGray, color: !newMenu.singleSize ? COLORS.fioreBeyaz : COLORS.grayDark }}>{sizes.hotSmall} / {sizes.hotLarge}</div>
-              <div onClick={() => setNewMenu(p => ({ ...p, singleSize: true }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newMenu.singleSize ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.singleSize ? COLORS.fioreBeyaz : COLORS.grayDark }}>Tek Fiyat</div>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {[['dual', `${sizes.hotSmall} / ${sizes.hotLarge}`], ['single', `Tek Boyut (${sizes.coldSize})`], ['none', 'Boyutsuz']].map(([v, l]) => (
+                <div key={v} onClick={() => setNewMenu(p => ({ ...p, priceType: v }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newMenu.priceType === v ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.priceType === v ? COLORS.fioreBeyaz : COLORS.grayDark }}>{l}</div>
+              ))}
             </div>
           </div>
-          {newMenu.singleSize ? (
-            <Inp label="Fiyat (₺)" value={newMenu.price} onChange={v => setNewMenu(p => ({ ...p, price: v }))} placeholder="80" type="number" />
-          ) : (
+          {newMenu.priceType === 'dual' && (
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{ flex: 1 }}><Inp label={sizes.hotSmall + ' Fiyat (₺)'} value={newMenu.price14oz} onChange={v => setNewMenu(p => ({ ...p, price14oz: v }))} placeholder="160" type="number" /></div>
               <div style={{ flex: 1 }}><Inp label={sizes.hotLarge + ' Fiyat (₺)'} value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="170" type="number" /></div>
             </div>
           )}
+          {newMenu.priceType === 'single' && (
+            <Inp label={sizes.coldSize + ' Fiyat (₺)'} value={newMenu.price16oz} onChange={v => setNewMenu(p => ({ ...p, price16oz: v }))} placeholder="185" type="number" />
+          )}
+          {newMenu.priceType === 'none' && (
+            <Inp label="Fiyat (₺)" value={newMenu.price} onChange={v => setNewMenu(p => ({ ...p, price: v }))} placeholder="80" type="number" />
+          )}
           <Bt onClick={async () => {
             if (!newMenu.name || !newMenu.category) { msg('Ad ve kategori girin!'); return; }
             const id = `${newMenu.category}__${newMenu.name}`.replace(/[\/\s#]/g, '_');
+            const pt = newMenu.priceType;
             const data = {
               name: newMenu.name, category: newMenu.category, categoryIcon: newMenu.categoryIcon, type: newMenu.type,
-              price14oz: newMenu.singleSize ? Number(newMenu.price) || 0 : Number(newMenu.price14oz) || 0,
-              price16oz: newMenu.singleSize ? 0 : Number(newMenu.price16oz) || 0,
-              singleSize: newMenu.singleSize, isGoat: false, stampEligible: true, note: '', order: menuItems.length, active: true,
+              price14oz: pt === 'dual' ? Number(newMenu.price14oz) || 0 : pt === 'none' ? Number(newMenu.price) || 0 : 0,
+              price16oz: pt === 'dual' ? Number(newMenu.price16oz) || 0 : pt === 'single' ? Number(newMenu.price16oz) || 0 : 0,
+              singleSize: pt === 'none', isGoat: false, stampEligible: true, note: '', order: menuItems.length, active: true,
             };
             await setDoc(doc(db, 'menuItems', id), data);
             setMenuItems(p => [...p, { id, ...data }]);
-            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', singleSize: false });
+            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual' });
             msg('✓ Ürün eklendi!');
           }} color={COLORS.green}>✓ Ürün Ekle</Bt>
         </C>
@@ -394,13 +400,15 @@ export default function AdminPanel() {
                 {isEd ? (
                   <div>
                     <Inp label="Ürün Adı" value={menuEditForm.name || ''} onChange={v => setMenuEditForm(p => ({ ...p, name: v }))} />
-                    {item.singleSize || (!item.price16oz && item.price14oz) ? (
+                    {item.singleSize ? (
                       <Inp label="Fiyat (₺)" value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" />
-                    ) : (
+                    ) : item.price14oz && item.price16oz ? (
                       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                         <div style={{ flex: 1 }}><Inp label={sizes.hotSmall + ' ₺'} value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
                         <div style={{ flex: 1 }}><Inp label={sizes.hotLarge + ' ₺'} value={menuEditForm.price16oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
                       </div>
+                    ) : (
+                      <Inp label={sizes.coldSize + ' ₺'} value={menuEditForm.price16oz || menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => item.price16oz ? ({ ...p, price16oz: v }) : ({ ...p, price14oz: v }))} type="number" />
                     )}
                     <div style={{ display: 'flex', gap: 8 }}>
                       <div style={{ flex: 1 }}><Bt onClick={async () => {
