@@ -4,6 +4,7 @@ import { db } from '../../config/firebase.js';
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { COLORS, STAMP_CATEGORIES } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
+import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
 
 const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>{children}</div>;
 const B = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 800, color: COLORS.fioreBeyaz, background: color, padding: '3px 10px', borderRadius: 10 }}>{text}</span>;
@@ -37,10 +38,9 @@ export default function AdminPanel() {
   const [newStaff, setNewStaff] = useState({ name: '', username: '', pin: '', role: 'Barista', branch: '' });
   const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
   const [newBranch, setNewBranch] = useState({ name: '', shortName: '' });
-  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', type: 'hot' });
-  const [editingPrice, setEditingPrice] = useState(null);
-  const [priceForm, setPriceForm] = useState({ price14oz: '', price16oz: '' });
-  const [priceOverrides, setPriceOverrides] = useState({});
+  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', type: 'hot', categoryIcon: '☕' });
+  const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [menuEditForm, setMenuEditForm] = useState({});
   const [adminEdit, setAdminEdit] = useState(null);
   const [adminForm, setAdminForm] = useState({ username: '', password: '', phone: '' });
   const [editingCust, setEditingCust] = useState(null);
@@ -49,11 +49,13 @@ export default function AdminPanel() {
 
   useEffect(() => {
     const load = async () => {
-      const [custSnap, staffSnap, logSnap, brSnap, campSnap, menuSnap] = await Promise.all([
+      const [custSnap, staffSnap, logSnap, brSnap, campSnap] = await Promise.all([
         getDocs(collection(db, 'customers')), getDocs(collection(db, 'staff')),
         getDocs(collection(db, 'stampLogs')), getDocs(collection(db, 'branches')),
-        getDocs(collection(db, 'campaigns')), getDocs(collection(db, 'menu')),
+        getDocs(collection(db, 'campaigns')),
       ]);
+      // Menüyü ayrı yükle (ilk seferde seed eder)
+      const menuList = await loadMenu();
       const cList = custSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const o = { goat: 0, mudavim: 1, misafir: 2 };
       cList.sort((a, b) => (o[a.level] || 2) - (o[b.level] || 2) || (b.totalStamps || 0) - (a.totalStamps || 0));
@@ -66,14 +68,7 @@ export default function AdminPanel() {
       const cl = campSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       cl.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setCampaigns(cl);
-      setMenuItems(menuSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      // Fiyat override'larını yükle
-      try {
-        const priceSnap = await getDocs(collection(db, 'menuPrices'));
-        const po = {};
-        priceSnap.docs.forEach(d => { po[d.id] = d.data(); });
-        setPriceOverrides(po);
-      } catch (e) {}
+      setMenuItems(menuList);
     };
     load();
   }, []);
@@ -313,8 +308,8 @@ export default function AdminPanel() {
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Kategori</div>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {MENU_DATA.map(cat => (
-                <div key={cat.category} onClick={() => setNewMenu(p => ({ ...p, category: cat.category, type: cat.type }))} style={{ padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: newMenu.category === cat.category ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.category === cat.category ? COLORS.fioreBeyaz : COLORS.grayDark }}>{cat.icon} {cat.category}</div>
+              {getCategories(menuItems).map(cat => (
+                <div key={cat.name} onClick={() => setNewMenu(p => ({ ...p, category: cat.name, categoryIcon: cat.icon, type: cat.type }))} style={{ padding: '5px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: newMenu.category === cat.name ? COLORS.fioreOrange : COLORS.warmGray, color: newMenu.category === cat.name ? COLORS.fioreBeyaz : COLORS.grayDark }}>{cat.icon} {cat.name}</div>
               ))}
             </div>
           </div>
@@ -324,77 +319,63 @@ export default function AdminPanel() {
           </div>
           <Bt onClick={async () => {
             if (!newMenu.name || !newMenu.category) { msg('Ad ve kategori girin!'); return; }
-            const data = { name: newMenu.name, category: newMenu.category, type: newMenu.type, price14oz: Number(newMenu.price14oz) || 0, price16oz: Number(newMenu.price16oz) || 0, active: true, createdAt: serverTimestamp() };
-            const ref = await addDoc(collection(db, 'menu'), data);
-            setMenuItems(p => [...p, { id: ref.id, ...data }]);
-            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', type: 'hot' });
+            const id = `${newMenu.category}__${newMenu.name}`.replace(/[\/\s#]/g, '_');
+            const data = { name: newMenu.name, category: newMenu.category, categoryIcon: newMenu.categoryIcon, type: newMenu.type, price14oz: Number(newMenu.price14oz) || 0, price16oz: Number(newMenu.price16oz) || 0, singleSize: false, isGoat: false, stampEligible: true, note: '', order: menuItems.length, active: true };
+            await setDoc(doc(db, 'menuItems', id), data);
+            setMenuItems(p => [...p, { id, ...data }]);
+            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', type: 'hot', categoryIcon: '☕' });
             msg('✓ Ürün eklendi!');
           }} color={COLORS.green}>✓ Ürün Ekle</Bt>
         </C>
 
-        {/* Mevcut menü - kategoriye göre */}
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>📋 Mevcut Menü — Fiyat Düzenle</div>
-        {MENU_DATA.map(cat => (
-          <div key={cat.category} style={{ marginBottom: 14 }}>
+        {/* Menü listesi — kategoriye göre */}
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>📋 Menü ({menuItems.filter(m => m.active).length} ürün)</div>
+        {groupByCategory(menuItems).map(cat => (
+          <div key={cat.category} style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange, marginBottom: 6 }}>{cat.icon} {cat.category}</div>
             {cat.items.map(item => {
-              const key = `${cat.category}::${item.name}`;
-              const override = priceOverrides[key.replace(/[\/\s]/g, '_')];
-              const p14 = override?.price14oz ?? item.price14oz ?? '';
-              const p16 = override?.price16oz ?? item.price16oz ?? '';
-              const isEditing = editingPrice === key;
-
-              return <div key={item.name} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, border: override ? `1.5px solid ${COLORS.green}30` : 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700 }}>{item.name}</span>
-                    {item.isGoat && <B text="#GOAT" color={COLORS.gold} />}
-                    {override && <span style={{ fontSize: 9, color: COLORS.green, marginLeft: 6 }}>✓ güncellendi</span>}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>
-                      {p14 ? `₺${p14}` : ''}{p14 && p16 ? ' / ' : ''}{p16 ? `₺${p16}` : ''}
-                    </span>
-                    <span onClick={() => {
-                      if (isEditing) { setEditingPrice(null); } else {
-                        setEditingPrice(key);
-                        setPriceForm({ price14oz: String(p14 || ''), price16oz: String(p16 || '') });
-                      }
-                    }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>{isEditing ? '✕' : '✏️'}</span>
-                  </div>
-                </div>
-                {isEditing && (
-                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${COLORS.grayLight}` }}>
+              const isEd = editingMenuItem === item.id;
+              return <div key={item.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4 }}>
+                {isEd ? (
+                  <div>
+                    <Inp label="Ürün Adı" value={menuEditForm.name || ''} onChange={v => setMenuEditForm(p => ({ ...p, name: v }))} />
                     <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                      <div style={{ flex: 1 }}><Inp label="14oz ₺" value={priceForm.price14oz} onChange={v => setPriceForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
-                      <div style={{ flex: 1 }}><Inp label="16oz ₺" value={priceForm.price16oz} onChange={v => setPriceForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
+                      <div style={{ flex: 1 }}><Inp label="14oz ₺" value={menuEditForm.price14oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price14oz: v }))} type="number" /></div>
+                      <div style={{ flex: 1 }}><Inp label="16oz ₺" value={menuEditForm.price16oz || ''} onChange={v => setMenuEditForm(p => ({ ...p, price16oz: v }))} type="number" /></div>
                     </div>
-                    <Bt onClick={async () => {
-                      const docId = key.replace(/[\/\s]/g, '_');
-                      const data = { name: item.name, category: cat.category, price14oz: Number(priceForm.price14oz) || 0, price16oz: Number(priceForm.price16oz) || 0, updatedAt: serverTimestamp() };
-                      await setDoc(doc(db, 'menuPrices', docId), data);
-                      setPriceOverrides(p => ({ ...p, [docId]: data }));
-                      setEditingPrice(null);
-                      msg(`✓ ${item.name} fiyatı güncellendi!`);
-                    }} color={COLORS.green} sm>✓ Fiyatı Kaydet</Bt>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ flex: 1 }}><Bt onClick={async () => {
+                        const upd = { name: menuEditForm.name, price14oz: Number(menuEditForm.price14oz) || 0, price16oz: Number(menuEditForm.price16oz) || 0 };
+                        await updateDoc(doc(db, 'menuItems', item.id), upd);
+                        setMenuItems(p => p.map(x => x.id === item.id ? { ...x, ...upd } : x));
+                        setEditingMenuItem(null); msg(`✓ ${menuEditForm.name} güncellendi!`);
+                      }} color={COLORS.green} sm>Kaydet</Bt></div>
+                      <div style={{ flex: 1 }}><Bt onClick={() => setEditingMenuItem(null)} color={COLORS.gray} sm>İptal</Bt></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>{item.name}</span>
+                      {item.isGoat && <B text="#GOAT" color={COLORS.gold} />}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>
+                        {item.price14oz ? `₺${item.price14oz}` : ''}{item.price14oz && item.price16oz ? ' / ' : ''}{item.price16oz ? `₺${item.price16oz}` : ''}
+                      </span>
+                      <span onClick={() => { setEditingMenuItem(item.id); setMenuEditForm({ name: item.name, price14oz: String(item.price14oz || ''), price16oz: String(item.price16oz || '') }); }} style={{ fontSize: 11, color: COLORS.blue, cursor: 'pointer' }}>✏️</span>
+                      <span onClick={async () => {
+                        await updateDoc(doc(db, 'menuItems', item.id), { active: false });
+                        setMenuItems(p => p.map(x => x.id === item.id ? { ...x, active: false } : x));
+                        msg(`${item.name} menüden çıkarıldı`);
+                      }} style={{ fontSize: 11, color: COLORS.red, cursor: 'pointer' }}>🗑️</span>
+                    </div>
                   </div>
                 )}
               </div>;
             })}
           </div>
         ))}
-
-        {/* Firestore'dan eklenen ekstra ürünler */}
-        {menuItems.length > 0 && <>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, marginTop: 14 }}>🆕 Eklenen Ürünler</div>
-          {menuItems.map(m => <div key={m.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '12px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div><div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div><div style={{ fontSize: 10, color: COLORS.gray }}>{m.category}</div></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{m.price14oz ? `₺${m.price14oz}` : ''}{m.price14oz && m.price16oz ? ' / ' : ''}{m.price16oz ? `₺${m.price16oz}` : ''}</span>
-              <span onClick={async () => { await deleteDoc(doc(db, 'menu', m.id)); setMenuItems(p => p.filter(x => x.id !== m.id)); msg('Silindi'); }} style={{ fontSize: 14, cursor: 'pointer' }}>🗑️</span>
-            </div>
-          </div>)}
-        </>}
       </div>}
 
       {/* ===== İŞLEM LOG ===== */}

@@ -1,31 +1,24 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../config/firebase.js';
-import { collection, getDocs } from 'firebase/firestore';
 import { COLORS } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
+import { loadMenu, groupByCategory } from '../../services/menuService.js';
 
 export default function CustomerMenu() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [favorites, setFavorites] = useState(new Set());
-  const [priceOverrides, setPriceOverrides] = useState({});
-  const menu = MENU_DATA[activeCategory];
+  const [menuData, setMenuData] = useState(MENU_DATA); // Başlangıçta sabit menü
+  const [loading, setLoading] = useState(true);
 
-  // Fiyat override'larını yükle
+  // Firestore'dan menü yükle
   useEffect(() => {
-    getDocs(collection(db, 'menuPrices')).then(snap => {
-      const po = {};
-      snap.docs.forEach(d => { po[d.id] = d.data(); });
-      setPriceOverrides(po);
-    }).catch(() => {});
+    loadMenu().then(items => {
+      const grouped = groupByCategory(items);
+      if (grouped.length > 0) setMenuData(grouped);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
-  // Fiyat getir (override varsa onu, yoksa orijinali)
-  const getPrice = (catName, item, field) => {
-    const key = `${catName}::${item.name}`.replace(/[\/\s]/g, '_');
-    const override = priceOverrides[key];
-    if (override && override[field]) return override[field];
-    return item[field];
-  };
+  const menu = menuData[activeCategory];
 
   const toggleFav = (name) => {
     const newFavs = new Set(favorites);
@@ -52,7 +45,7 @@ export default function CustomerMenu() {
 
       {/* Kategori seçici */}
       <div style={{ display: 'flex', gap: 6, padding: '10px 16px', overflowX: 'auto', background: COLORS.fioreBeyaz, borderBottom: `1.5px solid ${COLORS.grayLight}` }}>
-        {MENU_DATA.map((cat, i) => (
+        {menuData.map((cat, i) => (
           <div
             key={cat.category}
             onClick={() => setActiveCategory(i)}
@@ -87,7 +80,7 @@ export default function CustomerMenu() {
 
         {menu.items.map(item => {
           const isFav = favorites.has(item.name);
-          const hasDualPrice = menu.type === 'hot' && getPrice(menu.category, item, 'price16oz') && !item.singleSize;
+          const hasDualPrice = menu.type === 'hot' && item.price16oz && !item.singleSize;
 
           return (
             <div key={item.name} style={{
@@ -121,16 +114,16 @@ export default function CustomerMenu() {
                   <div style={{ display: 'flex', gap: 8 }}>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 9, color: COLORS.gray, fontWeight: 600 }}>14oz</div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>₺{getPrice(menu.category, item, 'price14oz')}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>₺{item.price14oz}</div>
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 9, color: COLORS.gray, fontWeight: 600 }}>16oz</div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>₺{getPrice(menu.category, item, 'price16oz')}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>₺{item.price16oz}</div>
                     </div>
                   </div>
                 ) : (
                   <div style={{ fontSize: 14, fontWeight: 800, color: COLORS.fioreOrange }}>
-                    ₺{getPrice(menu.category, item, 'price14oz') || getPrice(menu.category, item, 'price16oz') || item.price}
+                    ₺{item.price14oz || item.price16oz || item.price}
                   </div>
                 )}
               </div>
