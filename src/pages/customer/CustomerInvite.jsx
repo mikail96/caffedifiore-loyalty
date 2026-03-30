@@ -1,117 +1,95 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { COLORS } from '../../config/constants.js';
+import { COLORS, FONTS } from '../../config/constants.js';
 
-const Card = ({ children, style = {} }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', ...style }}>{children}</div>;
+const f = FONTS;
+const CopyIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>;
+const ShareIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>;
+const CheckIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>;
 
 export default function CustomerInvite() {
   const { userData } = useAuth();
   const [copied, setCopied] = useState(false);
   if (!userData) return null;
+  const refCode = userData.referralCode || 'DAVET';
 
-  const refCode = userData.referralCode || 'DAVET2024';
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(refCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (e) {}
-  };
-
+  const handleCopy = async () => { try { await navigator.clipboard.writeText(refCode); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch (e) {} };
   const handleShare = async () => {
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'CaffeDiFiore Sadakat Programı',
-          text: `CaffeDiFiore'da kahve al, damga topla, ücretsiz kahve kazan! Kayıt olurken benim davet kodumu gir: ${refCode}`,
-        });
-      } catch (e) {}
-    } else {
-      handleCopy();
-    }
+      try { await navigator.share({ title: 'CaffeDiFiore', text: `CaffeDiFiore'da kahve al, damga topla, ücretsiz kahve kazan! Davet kodum: ${refCode}` }); } catch (e) {}
+    } else handleCopy();
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
-      <div style={{ background: 'linear-gradient(180deg, #3D2B1F, #2A1810)', padding: '16px 20px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24 }} /></div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.fioreBeyaz }}>Arkadaşını Davet Et</div>
+    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
+      <div style={{ background: 'linear-gradient(160deg, #3D2B1F, #2A1810)', padding: '20px 24px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24 }} /></div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: COLORS.fioreBeyaz, fontFamily: f.heading }}>Davet Et</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>Arkadaşını davet et, bonus kazan</div>
       </div>
 
-      <div style={{ padding: '20px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>🎁</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.fioreSiyah, lineHeight: 1.4 }}>
-          Davet kodunu paylaş,<br />bonus damga kazan!
-        </div>
-
+      <div style={{ padding: '20px 20px', textAlign: 'center' }}>
         {/* Davet Kodu */}
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 8 }}>Senin Davet Kodun:</div>
+        <div style={{ background: COLORS.fioreBeyaz, borderRadius: 20, padding: '28px 24px', boxShadow: '0 2px 20px rgba(42,24,16,0.06)', marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.gray, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>Davet Kodun</div>
           <div style={{
-            background: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px 20px',
-            fontSize: 28, fontWeight: 800, color: COLORS.fioreOrange,
-            letterSpacing: 4, border: `2.5px solid ${COLORS.fioreOrange}`,
-            boxShadow: '0 2px 12px rgba(236,103,26,0.15)',
+            fontSize: 32, fontWeight: 700, color: COLORS.fioreOrange,
+            letterSpacing: 6, fontFamily: f.heading,
+            padding: '14px 0', borderTop: `1px solid ${COLORS.warmGray}`, borderBottom: `1px solid ${COLORS.warmGray}`,
           }}>
             {refCode}
           </div>
-          <div
-            onClick={handleCopy}
-            style={{
-              marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
+          <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'center' }}>
+            <div onClick={handleCopy} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
               background: copied ? COLORS.green : COLORS.fioreSiyah,
-              color: COLORS.fioreBeyaz, borderRadius: 10, padding: '10px 20px',
-              fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              transition: 'background 0.2s',
-            }}
-          >
-            {copied ? '✓ Kopyalandı!' : '📋 Kodu Kopyala'}
+              color: COLORS.fioreBeyaz, borderRadius: 12, padding: '12px 20px',
+              fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
+            }}>
+              {copied ? <CheckIcon /> : <CopyIcon />}
+              {copied ? 'Kopyalandı' : 'Kopyala'}
+            </div>
+            <div onClick={handleShare} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: COLORS.fioreOrange, color: COLORS.fioreBeyaz,
+              borderRadius: 12, padding: '12px 20px',
+              fontWeight: 600, fontSize: 13, cursor: 'pointer',
+            }}>
+              <ShareIcon /> Paylaş
+            </div>
           </div>
         </div>
 
         {/* Nasıl Çalışır */}
-        <div style={{ marginTop: 24, textAlign: 'left' }}>
-          <Card>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Nasıl Çalışır?</div>
-            {[
-              ['📋', 'Davet kodunu kopyala ve arkadaşına gönder'],
-              ['👤', 'Arkadaşın uygulamaya kayıt olurken kodu girsin'],
-              ['☕', 'İlk kahvesini alıp ilk damgasını kazansın'],
-              ['🎉', 'Sana otomatik 1 bonus damga eklenir!'],
-            ].map(([ic, tx], i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: i > 0 ? `1px solid ${COLORS.grayLight}` : 'none' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0, border: `1.5px solid ${COLORS.fioreOrange}30` }}>{ic}</div>
-                <span style={{ fontSize: 13, color: COLORS.grayDark, fontWeight: 500 }}>{tx}</span>
-              </div>
-            ))}
-          </Card>
-        </div>
-
-        {/* WhatsApp / Paylaş */}
-        <div style={{ marginTop: 16 }}>
-          <div onClick={handleShare} style={{ background: COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>
-            📤 Arkadaşına Gönder
-          </div>
+        <div style={{ background: COLORS.fioreBeyaz, borderRadius: 20, padding: '20px', boxShadow: '0 2px 20px rgba(42,24,16,0.06)', marginBottom: 16, textAlign: 'left' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, fontFamily: f.heading }}>Nasıl Çalışır?</div>
+          {[
+            ['1', 'Davet kodunu kopyala ve arkadaşına gönder'],
+            ['2', 'Arkadaşın kayıt olurken kodunu girsin'],
+            ['3', 'İlk kahvesini alıp damgasını kazansın'],
+            ['4', 'Sana otomatik 1 bonus damga eklenir'],
+          ].map(([n, tx], i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: COLORS.fioreOrange, flexShrink: 0 }}>{n}</div>
+              <span style={{ fontSize: 13, color: COLORS.grayDark, fontWeight: 500, lineHeight: 1.5 }}>{tx}</span>
+            </div>
+          ))}
         </div>
 
         {/* İstatistik */}
-        <div style={{ marginTop: 24 }}>
-          <Card>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14 }}>Davet İstatistiğin</div>
-            <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-              {[
-                [userData.referralCount || 0, 'Kayıt Oldu', COLORS.fioreOrange],
-                [0, 'İlk Damga', COLORS.blue],
-                [0, 'Bonus Kazandın', COLORS.green],
-              ].map(([val, label, color]) => (
-                <div key={label} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 26, fontWeight: 800, color }}>{val}</div>
-                  <div style={{ fontSize: 11, color: COLORS.grayDark, fontWeight: 600, marginTop: 2 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
+        <div style={{ background: COLORS.fioreBeyaz, borderRadius: 20, padding: '20px', boxShadow: '0 2px 20px rgba(42,24,16,0.06)' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, fontFamily: f.heading }}>Davet İstatistiğin</div>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            {[
+              [userData.referralCount || 0, 'Kayıt Oldu', COLORS.fioreOrange],
+              [0, 'Bonus Damga', COLORS.green],
+            ].map(([val, label, color]) => (
+              <div key={label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color, fontFamily: f.heading }}>{val}</div>
+                <div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 600, marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

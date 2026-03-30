@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../config/firebase.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, increment } from 'firebase/firestore';
-import { COLORS } from '../../config/constants.js';
+import { COLORS, FONTS } from '../../config/constants.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
 const inputStyle = { width: '100%', padding: '14px', borderRadius: 12, border: `2px solid ${COLORS.grayLight}`, fontSize: 15, fontWeight: 600, boxSizing: 'border-box', outline: 'none', letterSpacing: 0 };
@@ -141,7 +141,7 @@ export default function CustomerLogin() {
       <div style={{ textAlign: 'center', color: COLORS.fioreOrange, fontStyle: 'italic', fontSize: 13, fontWeight: 500, marginBottom: 20 }}>Sei Perfetto</div>
 
       <div style={{ background: COLORS.fioreBeyaz, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 130px)', padding: '28px 24px' }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.fioreSiyah, marginBottom: 4 }}>
+        <div style={{ fontSize: 24, fontWeight: 700, fontFamily: FONTS.heading, color: COLORS.fioreSiyah, marginBottom: 4 }}>
           {mode === 'login' ? 'Giriş Yap' : mode === 'register' ? 'Kayıt Ol' : 'Şifremi Unuttum'}
         </div>
         <div style={{ fontSize: 13, color: COLORS.grayDark, marginBottom: 24, lineHeight: 1.5 }}>

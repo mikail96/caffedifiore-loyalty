@@ -1,43 +1,44 @@
 import { useNavigate } from 'react-router-dom';
-import { COLORS } from '../config/constants.js';
+import { COLORS, FONTS } from '../config/constants.js';
+
+const f = FONTS;
+const CoffeeIcon = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>;
+const StoreIcon = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
     <div style={{
-      minHeight: '100vh',
-      background: '#2A1810',
-      fontFamily: "Segoe UI, -apple-system, sans-serif",
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20,
+      minHeight: '100vh', background: 'linear-gradient(170deg, #3D2B1F 0%, #1a1208 50%, #0d0906 100%)',
+      fontFamily: f.body, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', padding: 24,
     }}>
-      <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 48, objectFit: 'contain' }} />
-      <div style={{ fontSize: 14, color: COLORS.fioreOrange, fontStyle: 'italic', fontFamily: 'Georgia, serif', marginTop: 10, letterSpacing: 3 }}>Sei Perfetto</div>
-      <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 6, letterSpacing: 2 }}>CAFFEDIFIORE LOYALTY APP</div>
+      <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 44, opacity: 0.95 }} />
+      <div style={{ fontSize: 14, color: COLORS.fioreOrange, fontStyle: 'italic', fontFamily: f.heading, marginTop: 12, letterSpacing: 2, opacity: 0.8 }}>Sei Perfetto</div>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 8, letterSpacing: 3, fontWeight: 600 }}>LOYALTY PROGRAM</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 32, width: '100%', maxWidth: 340 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 40, width: '100%', maxWidth: 340 }}>
         <div onClick={() => navigate('/musteri/giris')} style={{
-          background: `linear-gradient(135deg, ${COLORS.fioreOrange}, ${COLORS.orangeLight})`,
-          borderRadius: 20, padding: '28px 16px', textAlign: 'center', cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(236,103,26,0.3)',
+          background: COLORS.fioreOrange, borderRadius: 20, padding: '32px 16px',
+          textAlign: 'center', cursor: 'pointer', position: 'relative', overflow: 'hidden',
         }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>{"\u2615"}</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.fioreBeyaz }}>{"M\u00FC\u015Fteri"}</div>
-          <div style={{ fontSize: 10, color: COLORS.fioreBeyaz, opacity: 0.8, marginTop: 4 }}>{"Damga topla, \u00FCcretsiz kahve kazan"}</div>
+          <div style={{ position: 'absolute', right: -15, top: -15, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+          <div style={{ marginBottom: 12 }}><CoffeeIcon /></div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.fioreBeyaz, fontFamily: f.heading }}>Müşteri</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 6, lineHeight: 1.4 }}>Damga topla, kahve kazan</div>
         </div>
         <div onClick={() => navigate('/isletme/giris')} style={{
-          background: `linear-gradient(135deg, ${COLORS.fioreSiyah}, #1a1a2e)`,
-          borderRadius: 20, padding: '28px 16px', textAlign: 'center', cursor: 'pointer',
-          border: '2px solid rgba(255,255,255,0.1)',
+          background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '32px 16px',
+          textAlign: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.08)',
         }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>{"\uD83C\uDFE2"}</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.fioreBeyaz }}>{"\u0130\u015Fletme"}</div>
+          <div style={{ marginBottom: 12 }}><StoreIcon /></div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.fioreBeyaz, fontFamily: f.heading }}>İşletme</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6, lineHeight: 1.4 }}>Personel & Yönetim</div>
         </div>
       </div>
+
+      <div style={{ marginTop: 48, fontSize: 11, color: 'rgba(255,255,255,0.15)', letterSpacing: 1 }}>CaffeDiFiore © 2016</div>
     </div>
   );
 }
