@@ -98,6 +98,26 @@ export default function AdminPanel() {
     await updateDoc(doc(db, 'customers', custId), { currentCard: newCard, totalStamps: newTotal, level: nl });
     setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: newCard, totalStamps: newTotal, level: nl } : x));
     await addDoc(collection(db, 'stampLogs'), { customerId: custId, customerName: c.name, staffId: 'admin', staffName: 'Admin', branchId: 'admin', type: delta > 0 ? 'admin_add' : 'admin_remove', cardAfter: newCard, timestamp: serverTimestamp() });
+
+    // Referans bonus: İlk damgada referans sahibine +1 damga
+    if (delta > 0 && newTotal === 1 && c.referredBy) {
+      try {
+        const refDoc = await getDoc(doc(db, 'customers', c.referredBy));
+        if (refDoc.exists()) {
+          const rd = refDoc.data();
+          const rnc = (rd.currentCard || 0) + 1 > 7 ? rd.currentCard || 0 : (rd.currentCard || 0) + 1;
+          const rnt = (rd.totalStamps || 0) + 1;
+          let rnl = rd.level;
+          if (rnt >= 40 && rd.level !== 'goat') rnl = 'goat';
+          else if (rnt >= 16 && rd.level === 'misafir') rnl = 'mudavim';
+          await updateDoc(doc(db, 'customers', c.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
+          setCustomers(p => p.map(x => x.id === c.referredBy ? { ...x, currentCard: rnc, totalStamps: rnt, level: rnl } : x));
+          await addDoc(collection(db, 'stampLogs'), { customerId: c.referredBy, customerName: rd.name, staffId: 'admin', staffName: 'Referans Bonus', branchId: 'admin', type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
+          msg(`🎁 ${rd.name} referans bonusu aldı!`);
+        }
+      } catch (e) { console.error('Referans bonus hatası:', e); }
+    }
+
     msg(`✓ ${c.name}: ${delta > 0 ? '+1 damga' : '-1 damga'} → ${newCard}/7 (toplam: ${newTotal})`);
   };
 

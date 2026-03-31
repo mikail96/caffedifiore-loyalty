@@ -153,6 +153,24 @@ export default function StaffPanel() {
       else if (nt >= 16 && sel.level === 'misafir') nl = 'mudavim';
       await updateDoc(doc(db, 'customers', sel.id), { currentCard: nc, totalStamps: nt, level: nl });
       await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'stamp', productCategory: cat, cardBefore: sel.currentCard || 0, cardAfter: nc, timestamp: serverTimestamp() });
+
+      // Referans bonus: İlk damgada referans sahibine +1 damga
+      if (nt === 1 && sel.referredBy) {
+        try {
+          const refDoc = await getDoc(doc(db, 'customers', sel.referredBy));
+          if (refDoc.exists()) {
+            const rd = refDoc.data();
+            const rnc = (rd.currentCard || 0) + 1 > 7 ? rd.currentCard || 0 : (rd.currentCard || 0) + 1;
+            const rnt = (rd.totalStamps || 0) + 1;
+            let rnl = rd.level;
+            if (rnt >= 40 && rd.level !== 'goat') rnl = 'goat';
+            else if (rnt >= 16 && rd.level === 'misafir') rnl = 'mudavim';
+            await updateDoc(doc(db, 'customers', sel.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
+            await addDoc(collection(db, 'stampLogs'), { customerId: sel.referredBy, customerName: rd.name, staffId: 'system', staffName: 'Referans Bonus', branchId: userData.branch, type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
+          }
+        } catch (e) { console.error('Referans bonus hatası:', e); }
+      }
+
       const updated = { ...sel, currentCard: nc, totalStamps: nt, level: nl };
       setSel(updated);
       setTStamp(p => p + 1);
