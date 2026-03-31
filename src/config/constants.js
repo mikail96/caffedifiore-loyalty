@@ -1,33 +1,33 @@
-// Marka Renkleri
+// Marka Renkleri — Warm Fiore Tema
 export const COLORS = {
   fioreOrange: '#EC671A',
-  fioreSiyah: '#030303',
-  headerDark: '#1a1510',
-  headerGradient: 'linear-gradient(180deg, #1a1510, #0d0b08)',
+  fioreSiyah: '#2C1E14',
+  headerDark: '#261810',
+  headerGradient: 'linear-gradient(170deg, #3D2B1F, #261810)',
   fioreBeyaz: '#FFFFFF',
-  orangeLight: '#F4943E',
-  orangeGlow: 'rgba(236,103,26,0.12)',
-  orangeSoft: 'rgba(236,103,26,0.05)',
-  cream: '#FFF9F3',
-  warmGray: '#F5F0EB',
-  gray: '#6B7280',
-  grayLight: '#E8E2DC',
-  grayDark: '#374151',
-  green: '#22C55E',
-  greenBg: 'rgba(34,197,94,0.08)',
-  gold: '#D4940A',
-  goldBg: 'rgba(212,148,10,0.1)',
-  goldDark: '#A67508',
-  goldLight: '#F5CE6E',
-  blue: '#3B82F6',
-  blueBg: 'rgba(59,130,246,0.08)',
-  red: '#EF4444',
-  purple: '#8B5CF6',
+  orangeLight: '#E8993A',
+  orangeGlow: 'rgba(236,103,26,0.07)',
+  orangeSoft: 'rgba(236,103,26,0.04)',
+  cream: '#FFF8F2',
+  warmGray: '#F2EAE2',
+  gray: '#B8A596',
+  grayLight: '#F2EAE2',
+  grayDark: '#7A6455',
+  green: '#34915A',
+  greenBg: 'rgba(52,145,90,0.06)',
+  gold: '#C8860A',
+  goldBg: 'rgba(200,134,10,0.07)',
+  goldDark: '#A06D08',
+  goldLight: '#E8C36E',
+  blue: '#4B8AD4',
+  blueBg: 'rgba(75,138,212,0.06)',
+  red: '#D94444',
+  purple: '#8B6CC6',
 };
 
-// Font aileleri
+// Font aileleri — DM Sans (hem başlık hem gövde)
 export const FONTS = {
-  heading: "'Playfair Display', Georgia, serif",
+  heading: "'DM Sans', -apple-system, sans-serif",
   body: "'DM Sans', -apple-system, sans-serif",
 };
 

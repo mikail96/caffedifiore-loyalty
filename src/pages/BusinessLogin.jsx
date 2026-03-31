@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase.js';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { COLORS } from '../config/constants.js';
+import { COLORS, FONTS } from '../config/constants.js';
 
 export default function BusinessLogin() {
   const navigate = useNavigate();
@@ -117,11 +117,11 @@ export default function BusinessLogin() {
   const tabColor = tab === 'staff' ? COLORS.blue : COLORS.purple;
 
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.fioreSiyah, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COLORS.fioreSiyah, fontFamily: FONTS.body }}>
       {/* Header */}
       <div style={{ padding: '50px 24px 24px', textAlign: 'center' }}>
         <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 40 }} />
-        <div style={{ fontSize: 13, color: COLORS.fioreOrange, fontStyle: 'italic', fontFamily: 'Georgia, serif', marginTop: 8, letterSpacing: 2 }}>Sei Perfetto</div>
+        <div style={{ fontSize: 13, color: COLORS.fioreOrange, fontStyle: 'italic', fontFamily: FONTS.heading, marginTop: 8, letterSpacing: 2 }}>Sei Perfetto</div>
       </div>
 
       {/* Content card */}

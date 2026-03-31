@@ -2,23 +2,24 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
 import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
-import { COLORS, STAMP_CATEGORIES } from '../../config/constants.js';
+import { COLORS, FONTS, STAMP_CATEGORIES } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
 
-const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>{children}</div>;
-const B = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 800, color: COLORS.fioreBeyaz, background: color, padding: '3px 10px', borderRadius: 10 }}>{text}</span>;
-const Bt = ({ children, color = COLORS.fioreOrange, onClick, sm, disabled }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: 12, padding: sm ? '8px 12px' : '14px', textAlign: 'center', fontWeight: 700, fontSize: sm ? 12 : 14, cursor: disabled ? 'not-allowed' : 'pointer', width: '100%', opacity: disabled ? 0.4 : 1 }}>{children}</div>;
-const Inp = ({ label, value, onChange, placeholder, type = 'text' }) => <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>{label}</div><input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 13, boxSizing: 'border-box', outline: 'none' }} /></div>;
+const f = FONTS;
+const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 22, padding: 18, boxShadow: '0 4px 20px rgba(44,30,20,0.04)', border: border || 'none', fontFamily: f.body, ...style }}>{children}</div>;
+const B = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.fioreBeyaz, background: color, padding: '4px 12px', borderRadius: 20, fontFamily: f.body }}>{text}</span>;
+const Bt = ({ children, color = COLORS.fioreOrange, onClick, sm, disabled }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: sm ? 12 : 50, padding: sm ? '8px 14px' : '14px', textAlign: 'center', fontWeight: 700, fontSize: sm ? 12 : 14, cursor: disabled ? 'not-allowed' : 'pointer', width: '100%', opacity: disabled ? 0.4 : 1, fontFamily: f.body }}>{children}</div>;
+const Inp = ({ label, value, onChange, placeholder, type = 'text' }) => <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 5, fontFamily: f.body }}>{label}</div><input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 14, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: f.body }} /></div>;
 
 const tabs = [
-  { id: 'dash', label: 'Ana', icon: '📊' },
-  { id: 'cust', label: 'Müşteri', icon: '👥' },
-  { id: 'staff', label: 'Personel', icon: '👨‍🍳' },
-  { id: 'branch', label: 'Şube', icon: '🏢' },
-  { id: 'camp', label: 'Kampanya', icon: '📢' },
-  { id: 'menu', label: 'Menü', icon: '📋' },
-  { id: 'logs', label: 'Log', icon: '🕐' },
+  { id: 'dash', label: 'Ana' },
+  { id: 'cust', label: 'Müşteri' },
+  { id: 'staff', label: 'Personel' },
+  { id: 'branch', label: 'Şube' },
+  { id: 'camp', label: 'Kampanya' },
+  { id: 'menu', label: 'Menü' },
+  { id: 'logs', label: 'Log' },
 ];
 
 export default function AdminPanel() {
@@ -38,7 +39,7 @@ export default function AdminPanel() {
   const [newStaff, setNewStaff] = useState({ name: '', username: '', pin: '', role: 'Barista', branch: '' });
   const [newCamp, setNewCamp] = useState({ title: '', desc: '', target: 'all' });
   const [newBranch, setNewBranch] = useState({ name: '', shortName: '' });
-  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual', sizeLabel: '' });
+  const [newMenu, setNewMenu] = useState({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '', priceType: 'dual', sizeLabel: '' });
   const [editingMenuItem, setEditingMenuItem] = useState(null);
   const [menuEditForm, setMenuEditForm] = useState({});
   const [adminEdit, setAdminEdit] = useState(null);
@@ -113,7 +114,7 @@ export default function AdminPanel() {
           await updateDoc(doc(db, 'customers', c.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
           setCustomers(p => p.map(x => x.id === c.referredBy ? { ...x, currentCard: rnc, totalStamps: rnt, level: rnl } : x));
           await addDoc(collection(db, 'stampLogs'), { customerId: c.referredBy, customerName: rd.name, staffId: 'admin', staffName: 'Referans Bonus', branchId: 'admin', type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
-          msg(`🎁 ${rd.name} referans bonusu aldı!`);
+          msg(`✓ ${rd.name} referans bonusu aldı!`);
         }
       } catch (e) { console.error('Referans bonus hatası:', e); }
     }
@@ -130,7 +131,7 @@ export default function AdminPanel() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       {toast && <div style={{ position: 'fixed', top: 40, left: '50%', transform: 'translateX(-50%)', background: COLORS.green, color: COLORS.fioreBeyaz, padding: '12px 24px', borderRadius: 14, fontWeight: 700, fontSize: 14, zIndex: 999, boxShadow: '0 4px 20px rgba(0,0,0,0.25)', maxWidth: 340, textAlign: 'center' }}>{toast}</div>}
 
       <div style={{ background: 'linear-gradient(180deg, #3D2B1F, #2A1810)', padding: '16px 20px 14px' }}>
@@ -142,22 +143,22 @@ export default function AdminPanel() {
       </div>
 
       <div style={{ display: 'flex', gap: 3, padding: '10px 12px', background: COLORS.fioreBeyaz, borderBottom: `2px solid ${COLORS.grayLight}`, overflowX: 'auto' }}>
-        {tabs.map(t => <div key={t.id} onClick={() => setTab(t.id)} style={{ padding: '7px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t.id ? COLORS.fioreSiyah : COLORS.warmGray, color: tab === t.id ? COLORS.fioreBeyaz : COLORS.grayDark }}>{t.icon} {t.label}</div>)}
+        {tabs.map(t => <div key={t.id} onClick={() => setTab(t.id)} style={{ padding: '7px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t.id ? COLORS.fioreSiyah : COLORS.warmGray, color: tab === t.id ? COLORS.fioreBeyaz : COLORS.grayDark }}>{t.label}</div>)}
       </div>
 
       {/* ===== DASHBOARD ===== */}
       {tab === 'dash' && <div style={{ padding: '14px 16px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-          {[['Üye', customers.length, '👥', COLORS.orangeGlow, COLORS.fioreOrange], ['Damga', stampLogs.filter(l => l.type === 'stamp').length, '☕', COLORS.blueBg, COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type !== 'stamp' && l.type !== 'admin_add' && l.type !== 'admin_remove').length, '🎁', COLORS.greenBg, COLORS.green], ['GOAT', goatCount, '🐐', COLORS.goldBg, COLORS.gold]].map(([l, v, ic, bg, c]) => <C key={l}><div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, marginBottom: 6 }}>{ic}</div><div style={{ fontSize: 24, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.grayDark, fontWeight: 600 }}>{l}</div></C>)}
+          {[['Üye', customers.length, '', COLORS.orangeGlow, COLORS.fioreOrange], ['Damga', stampLogs.filter(l => l.type === 'stamp').length, '', COLORS.blueBg, COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type !== 'stamp' && l.type !== 'admin_add' && l.type !== 'admin_remove').length, '', COLORS.greenBg, COLORS.green], ['GOAT', goatCount, '', COLORS.goldBg, COLORS.gold]].map(([l, v, ic, bg, c]) => <C key={l}><div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, marginBottom: 6 }}>{ic}</div><div style={{ fontSize: 24, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.grayDark, fontWeight: 600 }}>{l}</div></C>)}
         </div>
-        <C><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>🏆 En İyiler</div>
-          {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${COLORS.grayLight}` : 'none' }}><span style={{ fontSize: 16 }}>{c.level === 'goat' ? '🐐' : c.level === 'mudavim' ? '⭐' : '☕'}</span><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 700 }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
+        <C><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>En İyiler</div>
+          {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${COLORS.grayLight}` : 'none' }}><span style={{ fontSize: 16 }}>''</span><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 700 }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
         </C>
         {/* Admin Ayarları */}
         <C style={{ marginTop: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: adminEdit ? 12 : 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>⚙️ Admin Ayarları</div>
-            {!adminEdit && <div onClick={async () => { const snap = await getDocs(collection(db, 'settings')); const ad = snap.docs.find(d => d.id === 'admin'); if (ad) { const d = ad.data(); setAdminForm({ username: d.username || '', password: d.password || '', phone: d.phone || '' }); setAdminEdit(true); } }} style={{ fontSize: 12, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 12px', borderRadius: 8 }}>✏️ Düzenle</div>}
+            <div style={{ fontSize: 14, fontWeight: 800 }}>Admin Ayarları</div>
+            {!adminEdit && <div onClick={async () => { const snap = await getDocs(collection(db, 'settings')); const ad = snap.docs.find(d => d.id === 'admin'); if (ad) { const d = ad.data(); setAdminForm({ username: d.username || '', password: d.password || '', phone: d.phone || '' }); setAdminEdit(true); } }} style={{ fontSize: 12, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 12px', borderRadius: 8 }}>Düzenle</div>}
           </div>
           {adminEdit && <div>
             <Inp label="Kullanıcı Adı" value={adminForm.username} onChange={v => setAdminForm(p => ({ ...p, username: v }))} />
@@ -183,7 +184,7 @@ export default function AdminPanel() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ fontSize: 14, fontWeight: 700 }}>{c.name}</span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div>
               <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 2 }}>Kart: {c.currentCard || 0}/7 · Toplam: {c.totalStamps || 0}</div>
             </div>
-            <div onClick={() => setEditingCust(editingCust === c.id ? null : c.id)} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 10px', borderRadius: 8 }}>{editingCust === c.id ? '✕' : '✏️'}</div>
+            <div onClick={() => setEditingCust(editingCust === c.id ? null : c.id)} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 10px', borderRadius: 8 }}>{editingCust === c.id ? '✕' : '✎'}</div>
           </div>
           {editingCust === c.id && <div style={{ paddingTop: 10, borderTop: `1px solid ${COLORS.grayLight}` }}>
             <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Manuel Damga Düzenleme</div>
@@ -191,8 +192,8 @@ export default function AdminPanel() {
               <div style={{ flex: 1 }}><Bt onClick={() => adjustStamp(c.id, 1)} color={COLORS.green} sm disabled={(c.currentCard || 0) >= 7}>+ Damga Ekle</Bt></div>
               <div style={{ flex: 1 }}><Bt onClick={() => adjustStamp(c.id, -1)} color={COLORS.red} sm disabled={(c.currentCard || 0) <= 0 || (c.totalStamps || 0) <= 0}>− Damga Çıkar</Bt></div>
             </div>
-            <Bt onClick={() => { resetCard(c.id); setEditingCust(null); }} color={COLORS.gray} sm>🔄 Kartı Sıfırla (0/7)</Bt>
-            {c.level === 'goat' && <div style={{ marginTop: 6 }}><Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>🐐 GOAT Aylık Sıfırla</Bt></div>}
+            <Bt onClick={() => { resetCard(c.id); setEditingCust(null); }} color={COLORS.gray} sm>Kartı Sıfırla (0/7)</Bt>
+            {c.level === 'goat' && <div style={{ marginTop: 6 }}><Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>GOAT Aylık Sıfırla</Bt></div>}
           </div>}
         </C>)}
       </div>}
@@ -201,7 +202,7 @@ export default function AdminPanel() {
       {tab === 'staff' && <div style={{ padding: '14px 16px' }}>
         {/* Yeni Personel */}
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>➕ Yeni Personel Ekle</div>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Personel Ekle</div>
           <Inp label="Ad Soyad" value={newStaff.name} onChange={v => setNewStaff(p => ({ ...p, name: v }))} placeholder="Elif Arslan" />
           <Inp label="Kullanıcı Adı" value={newStaff.username} onChange={v => setNewStaff(p => ({ ...p, username: v.toLowerCase().replace(/\s/g, '.') }))} placeholder="elif.arslan" />
           <Inp label="PIN (4 hane)" value={newStaff.pin} onChange={v => { if (/^\d{0,4}$/.test(v)) setNewStaff(p => ({ ...p, pin: v })); }} placeholder="1234" />
@@ -224,10 +225,10 @@ export default function AdminPanel() {
 
         {/* Mevcut personel */}
         {branchKeys.map(bid => <div key={bid} style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>🏢 {branches[bid]?.name || branches[bid]?.shortName}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>{branches[bid]?.name || branches[bid]?.shortName}</div>
           {staffList.filter(s => s.branch === bid).map(st => <C key={st.id} style={{ marginBottom: 8 }}>
             {editingStaff === st.id ? <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.blue, marginBottom: 10 }}>✏️ Düzenle: {st.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.blue, marginBottom: 10 }}>Düzenle: {st.name}</div>
               <Inp label="Kullanıcı Adı" value={editForm.username || ''} onChange={v => setEditForm(p => ({ ...p, username: v }))} />
               <Inp label="PIN" value={editForm.pin || ''} onChange={v => { if (/^\d{0,4}$/.test(v)) setEditForm(p => ({ ...p, pin: v })); }} />
               <div style={{ marginBottom: 8 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Rol</div><div style={{ display: 'flex', gap: 5 }}>{['Barista', 'Part-time', 'Müdür'].map(r => <div key={r} onClick={() => setEditForm(p => ({ ...p, role: r }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.role === r ? COLORS.blue : COLORS.warmGray, color: editForm.role === r ? COLORS.fioreBeyaz : COLORS.grayDark }}>{r}</div>)}</div></div>
@@ -250,7 +251,7 @@ export default function AdminPanel() {
                     await updateDoc(doc(db, 'staff', st.id), { status: newStatus });
                     setStaffList(p => p.map(s => s.id === st.id ? { ...s, status: newStatus } : s));
                     msg(newStatus === 'active' ? '✓ Aktif edildi' : '✓ Pasif edildi');
-                  }} style={{ fontSize: 11, color: st.status === 'active' ? COLORS.red : COLORS.green, fontWeight: 700, cursor: 'pointer' }}>{st.status === 'active' ? '⏸️' : '▶️'}</span>
+                  }} style={{ fontSize: 11, color: st.status === 'active' ? COLORS.red : COLORS.green, fontWeight: 700, cursor: 'pointer' }}>{st.status === 'active' ? '■' : '▸'}</span>
                   <span onClick={async () => { if (!confirm('Bu personeli silmek istediğinize emin misiniz?')) return; await deleteDoc(doc(db, 'staff', st.id)); setStaffList(p => p.filter(s => s.id !== st.id)); msg('✓ Silindi'); }} style={{ fontSize: 11, color: COLORS.red, fontWeight: 700, cursor: 'pointer' }}>🗑️</span>
                 </div>
               </div>
@@ -262,7 +263,7 @@ export default function AdminPanel() {
       {/* ===== ŞUBE YÖNETİMİ ===== */}
       {tab === 'branch' && <div style={{ padding: '14px 16px' }}>
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>➕ Yeni Şube Ekle</div>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Şube Ekle</div>
           <Inp label="Şube Adı" value={newBranch.name} onChange={v => setNewBranch(p => ({ ...p, name: v }))} placeholder="CaffeDiFiore Yeni AVM" />
           <Inp label="Kısa Ad" value={newBranch.shortName} onChange={v => setNewBranch(p => ({ ...p, shortName: v }))} placeholder="Yeni AVM" />
           <Bt onClick={async () => {
@@ -283,7 +284,7 @@ export default function AdminPanel() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div><div style={{ fontSize: 15, fontWeight: 800 }}>{br.name || br.shortName}</div>
                 <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 3 }}>{brStaff.length} personel: {brStaff.map(s => s.name).join(', ') || '-'}</div></div>
-              <B text={hasCoords ? '📍 GPS var' : '❌ GPS yok'} color={hasCoords ? COLORS.green : COLORS.red} />
+              <B text={hasCoords ? 'GPS aktif' : 'GPS yok'} color={hasCoords ? COLORS.green : COLORS.red} />
             </div>
             {hasCoords && <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 4 }}>{br.lat.toFixed(6)}, {br.lng.toFixed(6)}</div>}
             <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
@@ -297,7 +298,7 @@ export default function AdminPanel() {
                   () => msg('Konum alınamadı!'),
                   { enableHighAccuracy: true }
                 );
-              }} color={COLORS.blue} sm>📍 Konum {hasCoords ? 'Güncelle' : 'Kaydet'}</Bt></div>
+              }} color={COLORS.blue} sm>Konum {hasCoords ? 'Güncelle' : 'Kaydet'}</Bt></div>
               <div style={{ flex: 1 }}><Bt onClick={async () => {
                 if (!confirm(`${br.name} şubesini silmek istediğinize emin misiniz?`)) return;
                 await deleteDoc(doc(db, 'branches', bid));
@@ -312,7 +313,7 @@ export default function AdminPanel() {
       {/* ===== KAMPANYALAR ===== */}
       {tab === 'camp' && <div style={{ padding: '14px 16px' }}>
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>➕ Yeni Kampanya</div>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Kampanya</div>
           <Inp label="Başlık" value={newCamp.title} onChange={v => setNewCamp(p => ({ ...p, title: v }))} placeholder="Hafta Sonu %20 İndirim" />
           <Inp label="Açıklama" value={newCamp.desc} onChange={v => setNewCamp(p => ({ ...p, desc: v }))} placeholder="Kampanya detayı..." />
           <div style={{ marginBottom: 12 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Hedef</div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{[['all', 'Tüm Üyeler'], ['goat', 'GOAT'], ['mudavim', 'Müdavim'], ['misafir', 'Yeni']].map(([v, l]) => <div key={v} onClick={() => setNewCamp(p => ({ ...p, target: v }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newCamp.target === v ? COLORS.fioreOrange : COLORS.warmGray, color: newCamp.target === v ? COLORS.fioreBeyaz : COLORS.grayDark }}>{l}</div>)}</div></div>
@@ -321,10 +322,10 @@ export default function AdminPanel() {
             const ref = await addDoc(collection(db, 'campaigns'), { title: newCamp.title.trim(), description: newCamp.desc.trim(), target: newCamp.target, active: true, createdAt: serverTimestamp() });
             setCampaigns(p => [{ id: ref.id, title: newCamp.title.trim(), description: newCamp.desc.trim(), target: newCamp.target, active: true, createdAt: { seconds: Date.now() / 1000 } }, ...p]);
             setNewCamp({ title: '', desc: '', target: 'all' }); msg('✓ Yayınlandı!');
-          }} color={COLORS.green}>🚀 Yayınla</Bt>
+          }} color={COLORS.green}>Yayınla</Bt>
         </C>
-        {campaigns.filter(c => c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>📢 Aktif</div>{campaigns.filter(c => c.active).map(c => <C key={c.id} style={{ marginBottom: 8 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><div><div style={{ fontSize: 14, fontWeight: 700 }}>{c.title}</div>{c.description && <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 3 }}>{c.description}</div>}</div><B text="AKTİF" color={COLORS.green} /></div><div style={{ display: 'flex', gap: 8, marginTop: 10 }}><div style={{ flex: 1 }}><Bt onClick={async () => { await updateDoc(doc(db, 'campaigns', c.id), { active: false }); setCampaigns(p => p.map(x => x.id === c.id ? { ...x, active: false } : x)); msg('Durduruldu'); }} color={COLORS.gray} sm>Durdur</Bt></div><div style={{ flex: 1 }}><Bt onClick={async () => { await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Silindi'); }} color={COLORS.red} sm>Sil</Bt></div></div></C>)}</>}
-        {campaigns.filter(c => !c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, marginTop: 14 }}>📦 Geçmiş</div>{campaigns.filter(c => !c.active).map(c => <div key={c.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}><div style={{ fontSize: 13, fontWeight: 700 }}>{c.title}</div><B text="Bitti" color={COLORS.gray} /></div>)}</>}
+        {campaigns.filter(c => c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Aktif</div>{campaigns.filter(c => c.active).map(c => <C key={c.id} style={{ marginBottom: 8 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><div><div style={{ fontSize: 14, fontWeight: 700 }}>{c.title}</div>{c.description && <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 3 }}>{c.description}</div>}</div><B text="AKTİF" color={COLORS.green} /></div><div style={{ display: 'flex', gap: 8, marginTop: 10 }}><div style={{ flex: 1 }}><Bt onClick={async () => { await updateDoc(doc(db, 'campaigns', c.id), { active: false }); setCampaigns(p => p.map(x => x.id === c.id ? { ...x, active: false } : x)); msg('Durduruldu'); }} color={COLORS.gray} sm>Durdur</Bt></div><div style={{ flex: 1 }}><Bt onClick={async () => { await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Silindi'); }} color={COLORS.red} sm>Sil</Bt></div></div></C>)}</>}
+        {campaigns.filter(c => !c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, marginTop: 14 }}>Geçmiş</div>{campaigns.filter(c => !c.active).map(c => <div key={c.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}><div style={{ fontSize: 13, fontWeight: 700 }}>{c.title}</div><B text="Bitti" color={COLORS.gray} /></div>)}</>}
       </div>}
 
       {/* ===== MENÜ YÖNETİMİ ===== */}
@@ -332,21 +333,21 @@ export default function AdminPanel() {
         {/* Bardak boyutları */}
         <C style={{ marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editingSizes ? 12 : 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>🥤 Bardak Boyutları</div>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>Bardak Boyutları</div>
             {!editingSizes ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, color: COLORS.grayDark }}>☕ {sizes.hotSmall}/{sizes.hotLarge} · 🧊 {sizes.coldSize}</span>
+                <span style={{ fontSize: 12, color: COLORS.grayDark }}>Sıcak: {sizes.hotSmall}/{sizes.hotLarge} · Soğuk: {sizes.coldSize}</span>
                 <span onClick={() => { setEditingSizes(true); setSizesForm({ ...sizes }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✏️</span>
               </div>
             ) : null}
           </div>
           {editingSizes && <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.fioreOrange, marginBottom: 8 }}>☕ Sıcak İçecekler</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.fioreOrange, marginBottom: 8 }}>Sıcak İçecekler</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               <div style={{ flex: 1 }}><Inp label="Küçük Boy" value={sizesForm.hotSmall || ''} onChange={v => setSizesForm(p => ({ ...p, hotSmall: v }))} placeholder="14oz" /></div>
               <div style={{ flex: 1 }}><Inp label="Büyük Boy" value={sizesForm.hotLarge || ''} onChange={v => setSizesForm(p => ({ ...p, hotLarge: v }))} placeholder="16oz" /></div>
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.blue, marginBottom: 8 }}>🧊 Soğuk İçecekler</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.blue, marginBottom: 8 }}>Soğuk İçecekler</div>
             <Inp label="Boy" value={sizesForm.coldSize || ''} onChange={v => setSizesForm(p => ({ ...p, coldSize: v }))} placeholder="16oz" />
             <div style={{ display: 'flex', gap: 8 }}>
               <div style={{ flex: 1 }}><Bt onClick={async () => {
@@ -362,7 +363,7 @@ export default function AdminPanel() {
 
         {/* Yeni ürün ekle */}
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>➕ Yeni Ürün Ekle</div>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Ürün Ekle</div>
           <Inp label="Ürün Adı" value={newMenu.name} onChange={v => setNewMenu(p => ({ ...p, name: v }))} placeholder="Caramel Latte" />
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Kategori</div>
@@ -415,13 +416,13 @@ export default function AdminPanel() {
             };
             await setDoc(doc(db, 'menuItems', id), data);
             setMenuItems(p => [...p, { id, ...data }]);
-            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '☕', priceType: 'dual', sizeLabel: '' });
+            setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '', priceType: 'dual', sizeLabel: '' });
             msg('✓ Ürün eklendi!');
           }} color={COLORS.green}>✓ Ürün Ekle</Bt>
         </C>
 
         {/* Menü listesi — kategoriye göre */}
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>📋 Menü ({menuItems.filter(m => m.active).length} ürün)</div>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>Menü ({menuItems.filter(m => m.active).length} ürün)</div>
         {groupByCategory(menuItems).map(cat => (
           <div key={cat.category} style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange, marginBottom: 6 }}>{cat.icon} {cat.category}</div>
@@ -478,7 +479,7 @@ export default function AdminPanel() {
 
       {/* ===== İŞLEM LOG ===== */}
       {tab === 'logs' && <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: 11, color: COLORS.grayDark, marginBottom: 10, background: COLORS.warmGray, padding: '8px 12px', borderRadius: 10 }}>ℹ️ Tüm işlem geçmişi</div>
+        <div style={{ fontSize: 11, color: COLORS.grayDark, marginBottom: 10, background: COLORS.warmGray, padding: '8px 12px', borderRadius: 10 }}>Tüm işlem geçmişi</div>
         {stampLogs.length === 0 ? <C style={{ textAlign: 'center', padding: 30 }}><div style={{ color: COLORS.gray }}>Henüz işlem yok</div></C> : stampLogs.map((l, i) => <div key={l.id || i} style={{ background: COLORS.fioreBeyaz, borderRadius: 14, padding: '12px 16px', marginBottom: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><span style={{ fontSize: 14, fontWeight: 700 }}>{l.customerName}</span><span style={{ fontSize: 11, color: COLORS.gray, marginLeft: 8 }}>{l.timestamp?.toDate?.()?.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + ' ' + l.timestamp?.toDate?.()?.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || ''}</span></div>

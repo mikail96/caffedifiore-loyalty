@@ -3,14 +3,15 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
 import { collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
-import { COLORS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
+import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { calculateDistance } from '../../utils/helpers.js';
 
-const Card = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(3,3,3,0.08)', border: border || 'none', ...style }}>{children}</div>;
-const Btn = ({ children, color = COLORS.fioreOrange, disabled = false, onClick }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: 14, padding: '14px', textAlign: 'center', fontWeight: 800, fontSize: 14, width: '100%', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1 }}>{children}</div>;
-const Badge = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 800, color: COLORS.fioreBeyaz, background: color, padding: '3px 10px', borderRadius: 10 }}>{text}</span>;
-const LvBadge = ({ level }) => { const c = { misafir: ['☕', 'Fiore Misafir', COLORS.fioreOrange, COLORS.orangeGlow], mudavim: ['⭐', 'Fiore Müdavim', COLORS.fioreOrange, COLORS.orangeGlow], goat: ['🐐', 'Fiore GOAT', COLORS.gold, COLORS.goldBg] }[level]; return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: c[3], padding: '5px 12px', borderRadius: 20, fontSize: 12, color: c[2], fontWeight: 800, border: `1.5px solid ${c[2]}30` }}>{c[0]} {c[1]}</div>; };
-const Stamps = ({ count }) => <div style={{ display: 'flex', gap: 5, justifyContent: 'center', flexWrap: 'wrap' }}>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: i < count ? COLORS.fioreOrange : COLORS.fioreBeyaz, border: i < count ? `2px solid ${COLORS.fioreOrange}` : `2px dashed ${COLORS.fioreOrange}50`, fontSize: 15 }}>{i < count ? '☕' : <span style={{ color: COLORS.fioreOrange, fontSize: 11, fontWeight: 800 }}>{i + 1}</span>}</div>)}<div style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: count >= 7 ? COLORS.green : COLORS.fioreBeyaz, border: count >= 7 ? `2px solid ${COLORS.green}` : `2px dashed ${COLORS.green}` }}>{count >= 7 ? '🎁' : <span style={{ color: COLORS.green, fontSize: 9, fontWeight: 900 }}>FREE</span>}</div></div>;
+const f = FONTS;
+const Card = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 22, padding: 18, boxShadow: '0 4px 20px rgba(44,30,20,0.04)', border: border || 'none', fontFamily: f.body, ...style }}>{children}</div>;
+const Btn = ({ children, color = COLORS.fioreOrange, disabled = false, onClick }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: 50, padding: '14px', textAlign: 'center', fontWeight: 700, fontSize: 14, width: '100%', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1, fontFamily: f.body, letterSpacing: 0.3 }}>{children}</div>;
+const Badge = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.fioreBeyaz, background: color, padding: '4px 12px', borderRadius: 20, fontFamily: f.body }}>{text}</span>;
+const LvBadge = ({ level }) => { const c = { misafir: ['Fiore Misafir', COLORS.fioreOrange, COLORS.orangeGlow], mudavim: ['Fiore Müdavim', COLORS.fioreOrange, COLORS.orangeGlow], goat: ['Fiore GOAT', COLORS.gold, COLORS.goldBg] }[level]; return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: c[2], padding: '6px 14px', borderRadius: 24, fontSize: 12, color: c[1], fontWeight: 700, border: `1.5px solid ${c[1]}20`, fontFamily: f.body }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: c[1] }} />{c[0]}</div>; };
+const Stamps = ({ count }) => <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: i < count ? COLORS.fioreOrange : 'transparent', border: i < count ? 'none' : `1.5px solid ${COLORS.grayLight}` }}>{i < count ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M20 6L9 17L4 12"/></svg> : <span style={{ color: COLORS.gray, fontSize: 10, fontWeight: 600 }}>{i + 1}</span>}</div>)}<div style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: count >= 7 ? COLORS.green : 'transparent', border: count >= 7 ? 'none' : `1.5px dashed ${COLORS.green}60` }}>{count >= 7 ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M20 6L9 17L4 12"/></svg> : <span style={{ color: COLORS.green, fontSize: 9, fontWeight: 800 }}>FREE</span>}</div></div>;
 
 export default function StaffPanel() {
   const { userData, logout } = useAuth();
@@ -126,7 +127,7 @@ export default function StaffPanel() {
     setSel({ id: custDoc.id, ...custDoc.data() });
     setStep(null);
     setCat(null);
-    msg('✅ ' + custDoc.data().name + ' bulundu!');
+    msg(custDoc.data().name + ' bulundu!');
   };
 
   // Damga ekle
@@ -175,7 +176,7 @@ export default function StaffPanel() {
       setSel(updated);
       setTStamp(p => p + 1);
       setLogs(p => [{ cn: sel.name, type: 'stamp', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), cat }, ...p]);
-      msg(`☕ Damga! ${sel.name} ${nc}/7`);
+      msg(`Damga: ${sel.name} ${nc}/7`);
       if (nl !== sel.level) setTimeout(() => msg(`🎉 ${sel.name} ${nl.toUpperCase()} oldu!`, 'warning'), 1500);
       setStep(null); setCat(null);
     } catch (e) { msg('Hata!', 'error'); }
@@ -190,7 +191,7 @@ export default function StaffPanel() {
       await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'free_redeemed', timestamp: serverTimestamp() });
       setSel({ ...sel, currentCard: 0 }); setTFree(p => p + 1);
       setLogs(p => [{ cn: sel.name, type: 'free', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
-      msg('🎁 Ücretsiz verildi! Kart 0/7');
+      msg('Ücretsiz verildi! Kart 0/7');
     } catch (e) { msg('Hata!', 'error'); }
     setBusy(false);
   };
@@ -203,7 +204,7 @@ export default function StaffPanel() {
       await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'goat_monthly', timestamp: serverTimestamp() });
       setSel({ ...sel, goatMonthlyUsed: true });
       setLogs(p => [{ cn: sel.name, type: 'goat', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
-      msg('🐐 GOAT aylık ücretsiz verildi!');
+      msg('GOAT aylık ücretsiz verildi!');
     } catch (e) { msg('Hata!', 'error'); }
     setBusy(false);
   };
@@ -212,7 +213,7 @@ export default function StaffPanel() {
   useEffect(() => { return () => { if (scannerRef.current) scannerRef.current.stop().catch(() => {}); }; }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: "Segoe UI, -apple-system, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       {toast && <div style={{ position: 'fixed', top: 40, left: '50%', transform: 'translateX(-50%)', background: tt === 'success' ? COLORS.green : tt === 'error' ? COLORS.red : COLORS.gold, color: COLORS.fioreBeyaz, padding: '12px 24px', borderRadius: 14, fontWeight: 700, fontSize: 14, zIndex: 999, boxShadow: '0 4px 20px rgba(0,0,0,0.25)', maxWidth: 340, textAlign: 'center' }}>{toast}</div>}
 
       {/* Header */}
@@ -230,21 +231,21 @@ export default function StaffPanel() {
 
       {/* İstatistik */}
       <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
-        {[[tStamp, 'Damga', '☕', COLORS.fioreOrange], [tFree, 'Ücretsiz', '🎁', COLORS.green]].map(([v, l, ic, c]) => <div key={l} style={{ flex: 1, background: COLORS.fioreBeyaz, borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(3,3,3,0.06)' }}><div style={{ fontSize: 18 }}>{ic}</div><div style={{ fontSize: 22, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 10, color: COLORS.grayDark, fontWeight: 600 }}>{l}</div></div>)}
+        {[[tStamp, 'Damga', COLORS.fioreOrange], [tFree, 'Ücretsiz', COLORS.green]].map(([v, l, ic, c]) => <div key={l} style={{ flex: 1, background: COLORS.fioreBeyaz, borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(3,3,3,0.06)' }}><div style={{ fontSize: 22, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 10, color: COLORS.grayDark, fontWeight: 600 }}>{l}</div></div>)}
       </div>
 
       {/* GPS */}
       <div style={{ padding: '0 16px 10px' }}>
         <div onClick={checkGPS} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: gpsChecking ? COLORS.warmGray : gps ? COLORS.greenBg : 'rgba(239,68,68,0.06)', border: `1.5px solid ${gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red}`, cursor: 'pointer' }}>
-          <span style={{ fontSize: 16 }}>{gpsChecking ? '⏳' : gps ? '📍' : '❌'}</span>
+          <span style={{ fontSize: 16 }}><div style={{ width: 8, height: 8, borderRadius: '50%', background: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }} /></span>
           <div><div style={{ fontSize: 12, fontWeight: 700, color: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }}>{gpsChecking ? 'Konum kontrol ediliyor...' : gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gpsChecking ? '' : gpsDistance !== null ? `${branchName} · ${gpsDistance}m` : gps ? `${branchName} · Koordinat henüz kaydedilmemiş` : 'İşlem yapılamaz'}</div></div>
-          <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>🔄</span>
+          <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>Yenile</span>
         </div>
       </div>
 
       {/* Aktif Kampanyalar */}
       {campaigns.length > 0 && <div style={{ padding: '0 16px 10px' }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.grayDark, marginBottom: 6 }}>📢 Aktif Kampanyalar</div>
+        <div style={{ fontSize: 12, fontWeight: 800, color: COLORS.grayDark, marginBottom: 6 }}>Aktif Kampanyalar</div>
         {campaigns.map(c => (
           <div key={c.id} style={{ background: COLORS.orangeGlow, borderRadius: 10, padding: '10px 14px', marginBottom: 4, border: `1.5px solid ${COLORS.fioreOrange}30` }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.title}</div>
@@ -257,7 +258,7 @@ export default function StaffPanel() {
       {!sel && (
         <div style={{ padding: '0 16px 16px' }}>
           <Card>
-            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12, textAlign: 'center' }}>📷 Müşteri QR Kodunu Okut</div>
+            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12, textAlign: 'center' }}>Müşteri QR Kodunu Okut</div>
 
             {/* Kamera görüntüsü */}
             <div id="qr-reader" style={{
@@ -268,7 +269,7 @@ export default function StaffPanel() {
 
             {!scanning ? (
               <Btn onClick={startScan} disabled={!gps}>
-                📷 Kamerayı Aç ve QR Okut
+                Kamerayı Aç
               </Btn>
             ) : (
               <Btn onClick={stopScan} color={COLORS.red}>
@@ -284,7 +285,7 @@ export default function StaffPanel() {
 
             {!gps && !gpsChecking && (
               <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '10px 14px', marginTop: 10, border: `1.5px solid ${COLORS.red}` }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.red }}>❌ Şube alanında değilsiniz. Kamera açılamaz.</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.red }}>Şube alanında değilsiniz.</div>
               </div>
             )}
 
@@ -301,21 +302,21 @@ export default function StaffPanel() {
       {/* Müşteri Bulundu */}
       {sel && <div style={{ padding: '0 16px 16px' }}>
         <Card border={`2px solid ${sel.level === 'goat' ? COLORS.gold : COLORS.green}`}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span>✅</span><span style={{ fontSize: 13, fontWeight: 800, color: COLORS.green }}>Müşteri Bulundu</span>{sel.level === 'goat' && <Badge text="🐐 GOAT" color={COLORS.gold} />}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span style={{ fontSize: 13, fontWeight: 800, color: COLORS.green }}>Müşteri Bulundu</span>{sel.level === 'goat' && <Badge text="GOAT" color={COLORS.gold} />}</div>
           <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>{sel.name}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><LvBadge level={sel.level} /><span style={{ fontSize: 12, color: COLORS.grayDark, fontWeight: 600 }}>· {sel.currentCard || 0}/7</span></div>
           <Stamps count={sel.currentCard || 0} />
 
           {sel.level === 'goat' && <div style={{ background: COLORS.goldBg, borderRadius: 12, padding: '12px', marginTop: 12, border: `1.5px solid ${COLORS.gold}` }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: COLORS.gold, marginBottom: 6 }}>🐐 GOAT DURUM</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: COLORS.gold, marginBottom: 6 }}>GOAT Durum</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}><span style={{ color: COLORS.grayDark }}>Aylık ücretsiz:</span><span style={{ color: sel.goatMonthlyUsed ? COLORS.gray : COLORS.green, fontWeight: 700 }}>{sel.goatMonthlyUsed ? '✗ Kullanıldı' : '✓ Kullanılmadı'}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 4 }}><span style={{ color: COLORS.grayDark }}>%10 indirim:</span><span style={{ color: COLORS.gold, fontWeight: 700 }}>Aktif</span></div>
           </div>}
 
           {!step && <><div style={{ marginTop: 14, fontSize: 14, fontWeight: 800, marginBottom: 10 }}>İşlem Seç:</div><div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <Btn onClick={() => { if ((sel.currentCard || 0) >= 7) { msg('Kart dolu!', 'error'); return; } setStep('cat'); }} disabled={!gps || (sel.currentCard || 0) >= 7}>{'☕ Damga Ekle' + (sel.level === 'goat' ? ' (%10 indirimli)' : '')}</Btn>
-            {sel.level === 'goat' && <Btn onClick={doGoat} disabled={!gps || sel.goatMonthlyUsed} color={COLORS.gold}>🐐 GOAT Aylık Ücretsiz</Btn>}
-            <Btn onClick={doFree} disabled={!gps || (sel.currentCard || 0) < 7} color={COLORS.green}>🎁 Sadakat Ücretsiz (sıfırlanır)</Btn>
+            <Btn onClick={() => { if ((sel.currentCard || 0) >= 7) { msg('Kart dolu!', 'error'); return; } setStep('cat'); }} disabled={!gps || (sel.currentCard || 0) >= 7}>{'Damga Ekle' + (sel.level === 'goat' ? ' (%10 indirimli)' : '')}</Btn>
+            {sel.level === 'goat' && <Btn onClick={doGoat} disabled={!gps || sel.goatMonthlyUsed} color={COLORS.gold}>GOAT Aylık Ücretsiz</Btn>}
+            <Btn onClick={doFree} disabled={!gps || (sel.currentCard || 0) < 7} color={COLORS.green}>Sadakat Ücretsiz</Btn>
           </div></>}
 
           {step === 'cat' && <><div style={{ marginTop: 14, fontSize: 14, fontWeight: 800, marginBottom: 10 }}>Müşteri ne aldı?</div>
@@ -332,8 +333,8 @@ export default function StaffPanel() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}><div style={{ flex: 1 }}><Btn onClick={doStamp} color={COLORS.green}>✓ Onayla</Btn></div><div style={{ flex: 1 }}><Btn onClick={() => { setStep('cat'); setCat(null); }} color={COLORS.gray}>← Geri</Btn></div></div>
           </div>}
 
-          {!gps && <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '10px 14px', marginTop: 10, border: `1.5px solid ${COLORS.red}` }}><div style={{ fontSize: 12, fontWeight: 700, color: COLORS.red }}>❌ Şube dışındasınız!</div></div>}
-          <div onClick={() => { setSel(null); setStep(null); setCat(null); }} style={{ marginTop: 12, textAlign: 'center', fontSize: 13, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>📷 Yeni QR Okut</div>
+          {!gps && <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '10px 14px', marginTop: 10, border: `1.5px solid ${COLORS.red}` }}><div style={{ fontSize: 12, fontWeight: 700, color: COLORS.red }}>Şube dışındasınız</div></div>}
+          <div onClick={() => { setSel(null); setStep(null); setCat(null); }} style={{ marginTop: 12, textAlign: 'center', fontSize: 13, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>Yeni QR Okut</div>
         </Card>
       </div>}
 
