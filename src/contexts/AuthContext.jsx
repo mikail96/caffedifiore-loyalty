@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { auth, db } from '../config/firebase.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
 
@@ -10,22 +10,45 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionKicked, setSessionKicked] = useState(false);
+  const snapshotUnsub = useRef(null);
+  const loginGrace = useRef(false); // Login sonrası koruma
 
   const loadCustomerData = async (uid) => {
-    const customerDoc = await getDoc(doc(db, 'customers', uid));
-    if (customerDoc.exists()) {
-      setUserData(customerDoc.data());
-      setRole('customer');
-      return true;
-    }
+    const snap = await getDoc(doc(db, 'customers', uid));
+    if (snap.exists()) { setUserData(snap.data()); setRole('customer'); return true; }
     return false;
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (snapshotUnsub.current) { snapshotUnsub.current(); snapshotUnsub.current = null; }
+
       if (firebaseUser) {
         setUser(firebaseUser);
         await loadCustomerData(firebaseUser.uid);
+
+        // Login sonrası 3sn koruma — sessionId yazılmasını bekle
+        loginGrace.current = true;
+        setTimeout(() => { loginGrace.current = false; }, 3000);
+
+        // Gerçek zamanlı oturum dinleyici
+        snapshotUnsub.current = onSnapshot(doc(db, 'customers', firebaseUser.uid), (snap) => {
+          if (!snap.exists()) return;
+          const data = snap.data();
+          setUserData(data);
+
+          // Koruma süresi içindeyse kontrol etme
+          if (loginGrace.current) return;
+
+          const local = sessionStorage.getItem('cdf_session');
+          if (local && data.sessionId && local !== data.sessionId) {
+            console.log('Session kicked:', local, '!=', data.sessionId);
+            setSessionKicked(true);
+            if (snapshotUnsub.current) { snapshotUnsub.current(); snapshotUnsub.current = null; }
+            signOut(auth).catch(() => {});
+          }
+        });
       } else {
         setUser(null);
         setUserData(null);
@@ -33,48 +56,35 @@ export function AuthProvider({ children }) {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (snapshotUnsub.current) snapshotUnsub.current();
+    };
   }, []);
 
   const refreshUser = async () => {
-    if (auth.currentUser) {
-      await loadCustomerData(auth.currentUser.uid);
-    }
+    if (auth.currentUser) await loadCustomerData(auth.currentUser.uid);
   };
 
-  // Session kontrolü: Firestore'daki sessionId ile yerel eşleşiyor mu?
-  const checkSession = async () => {
-    if (!auth.currentUser) return true;
-    try {
-      const snap = await getDoc(doc(db, 'customers', auth.currentUser.uid));
-      if (!snap.exists()) return true;
-      const localSession = sessionStorage.getItem('cdf_session');
-      const remoteSession = snap.data().sessionId;
-      if (localSession && remoteSession && localSession !== remoteSession) {
-        return false; // Başka cihaz giriş yapmış
-      }
-    } catch (e) {}
-    return true;
-  };
-
-  const loginAsStaff = async (staffData) => { setUserData(staffData); setRole('staff'); };
-  const loginAsAdmin = async (adminData) => { setUserData(adminData); setRole('admin'); };
+  const loginAsStaff = async (d) => { setUserData(d); setRole('staff'); };
+  const loginAsAdmin = async (d) => { setUserData(d); setRole('admin'); };
 
   const logout = async () => {
+    if (snapshotUnsub.current) { snapshotUnsub.current(); snapshotUnsub.current = null; }
     try { await signOut(auth); } catch (e) {}
     sessionStorage.removeItem('cdf_session');
     setUser(null); setUserData(null); setRole(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, role, loading, loginAsStaff, loginAsAdmin, logout, refreshUser, setUserData, checkSession }}>
+    <AuthContext.Provider value={{ user, userData, role, loading, loginAsStaff, loginAsAdmin, logout, refreshUser, setUserData, sessionKicked, setSessionKicked }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

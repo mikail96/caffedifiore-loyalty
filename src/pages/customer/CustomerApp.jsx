@@ -21,24 +21,10 @@ const tabs = [
 
 export default function CustomerApp() {
   const [activeTab, setActiveTab] = useState('home');
-  const { logout, userData, user, checkSession } = useAuth();
+  const { logout, userData, user, sessionKicked, setSessionKicked } = useAuth();
   const isGoat = userData?.level === 'goat';
   const [notifBanner, setNotifBanner] = useState(null);
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
-  const [sessionKicked, setSessionKicked] = useState(false);
-
-  // Tek oturum kontrolü: mount + focus + 30sn aralık
-  useEffect(() => {
-    const verify = async () => {
-      const valid = await checkSession();
-      if (!valid) { setSessionKicked(true); logout(); }
-    };
-    verify();
-    const interval = setInterval(verify, 30000);
-    const onFocus = () => verify();
-    window.addEventListener('focus', onFocus);
-    return () => { clearInterval(interval); window.removeEventListener('focus', onFocus); };
-  }, []);
 
   if (sessionKicked) {
     return (
