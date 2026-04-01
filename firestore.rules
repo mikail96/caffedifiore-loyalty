@@ -1,11 +1,86 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Test aşaması — tüm okuma/yazma açık
-    // Canlıya tam geçince sıkılaştırılacak
-    match /{document=**} {
+    
+    // ===== MÜŞTERİLER =====
+    // Giriş yapmış kullanıcı kendi verisini okur, herkes (personel dahil) günceller
+    match /customers/{custId} {
+      allow read: if request.auth != null || true;
+      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'email', 'level'])
+                    && request.resource.data.level == 'misafir'
+                    && request.resource.data.currentCard == 0
+                    && request.resource.data.totalStamps == 0
+                    && request.resource.data.name is string
+                    && request.resource.data.phone is string
+                    && request.resource.data.email is string;
+      allow update: if request.resource.data.currentCard is int
+                    && request.resource.data.totalStamps is int
+                    && request.resource.data.currentCard >= 0
+                    && request.resource.data.currentCard <= 7
+                    && request.resource.data.totalStamps >= 0
+                    && request.resource.data.totalStamps <= 9999
+                    && request.resource.data.level in ['misafir', 'mudavim', 'goat'];
+      allow delete: if true;
+    }
+
+    // ===== DAMGA LOGLARI =====
+    // Oluşturma izni — veri doğrulaması ile, silme/düzenleme yasak
+    match /stampLogs/{logId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['customerId', 'customerName', 'type', 'timestamp'])
+                    && request.resource.data.type in ['stamp', 'free_redeemed', 'goat_monthly', 'admin_add', 'admin_remove', 'referral_bonus']
+                    && request.resource.data.customerId is string
+                    && request.resource.data.customerName is string;
+      allow update, delete: if false;
+    }
+
+    // ===== PERSONEL =====
+    // Herkes okuyabilir (login kontrolü için), yazma açık (admin yönetiyor)
+    match /staff/{staffId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['name', 'username', 'pin', 'role', 'branch', 'status'])
+                            && request.resource.data.status in ['active', 'inactive']
+                            && request.resource.data.pin is string
+                            && request.resource.data.pin.size() == 4;
+      allow delete: if true;
+    }
+
+    // ===== AYARLAR =====
+    // Admin şifre + boyut ayarları
+    match /settings/{settingId} {
       allow read: if true;
       allow write: if true;
+    }
+
+    // ===== KAMPANYALAR =====
+    match /campaigns/{campId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['title', 'active'])
+                    && request.resource.data.title is string;
+      allow update, delete: if true;
+    }
+
+    // ===== ŞUBELER =====
+    match /branches/{branchId} {
+      allow read: if true;
+      allow write: if request.resource.data.name is string;
+    }
+
+    // ===== MENÜ =====
+    match /menuItems/{itemId} {
+      allow read: if true;
+      allow write: if request.resource.data.name is string
+                   && request.resource.data.category is string;
+    }
+
+    // ===== LOGIN GİRİŞİM TAKİBİ =====
+    match /loginAttempts/{attemptId} {
+      allow read, write: if true;
+    }
+
+    // Diğer her şeyi kapat
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

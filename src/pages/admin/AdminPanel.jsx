@@ -6,7 +6,7 @@ import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc,
 import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
-import { calculateLevel } from '../../utils/helpers.js';
+import { calculateLevel, hashPin } from '../../utils/helpers.js';
 
 const f = FONTS;
 const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.cardBg, borderRadius: 22, padding: 18, border: border || `1px solid ${COLORS.divider}`, fontFamily: f.body, ...style }}>{children}</div>;
@@ -178,7 +178,15 @@ export default function AdminPanel() {
             <Inp label="Şifre" value={adminForm.password} onChange={v => setAdminForm(p => ({ ...p, password: v }))} />
             <Inp label="Telefon" value={adminForm.phone} onChange={v => setAdminForm(p => ({ ...p, phone: v }))} placeholder="+905XXXXXXXXX" />
             <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ flex: 1 }}><Bt onClick={async () => { await updateDoc(doc(db, 'settings', 'admin'), adminForm); setAdminEdit(null); msg('✓ Admin güncellendi!'); }} color={COLORS.green} sm>Kaydet</Bt></div>
+              <div style={{ flex: 1 }}><Bt onClick={async () => {
+                const updates = { ...adminForm };
+                // Şifre değiştiyse hashle (64 karakter hash değilse yeni şifre)
+                if (updates.password && updates.password.length < 60) {
+                  updates.password = await hashPin(updates.password);
+                }
+                await updateDoc(doc(db, 'settings', 'admin'), updates);
+                setAdminEdit(null); msg('Admin güncellendi!');
+              }} color={COLORS.green} sm>Kaydet</Bt></div>
               <div style={{ flex: 1 }}><Bt onClick={() => setAdminEdit(null)} color={COLORS.gray} sm>İptal</Bt></div>
             </div>
           </div>}
@@ -379,11 +387,13 @@ export default function AdminPanel() {
           </div>
           <Bt onClick={async () => {
             if (!newStaff.name || !newStaff.username || newStaff.pin.length !== 4 || !newStaff.branch) { msg('Tüm alanları doldurun!'); return; }
-            const ref = await addDoc(collection(db, 'staff'), { ...newStaff, status: 'active', createdAt: serverTimestamp() });
-            setStaffList(p => [...p, { id: ref.id, ...newStaff, status: 'active' }]);
+            const hashedPin = await hashPin(newStaff.pin);
+            const staffObj = { ...newStaff, pin: hashedPin, status: 'active', createdAt: serverTimestamp() };
+            const ref = await addDoc(collection(db, 'staff'), staffObj);
+            setStaffList(p => [...p, { id: ref.id, ...staffObj }]);
             setNewStaff({ name: '', username: '', pin: '', role: 'Barista', branch: '' });
-            msg('✓ Personel eklendi!');
-          }} color={COLORS.green}>✓ Personel Ekle</Bt>
+            msg('Personel eklendi!');
+          }} color={COLORS.green}>Personel Ekle</Bt>
         </C>
 
         {/* Mevcut personel */}
@@ -397,7 +407,16 @@ export default function AdminPanel() {
               <div style={{ marginBottom: 8 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Rol</div><div style={{ display: 'flex', gap: 5 }}>{['Barista', 'Part-time', 'Müdür'].map(r => <div key={r} onClick={() => setEditForm(p => ({ ...p, role: r }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.role === r ? COLORS.blue : COLORS.warmGray, color: editForm.role === r ? COLORS.fioreBeyaz : COLORS.grayDark }}>{r}</div>)}</div></div>
               <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Şube</div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{branchKeys.map(b => <div key={b} onClick={() => setEditForm(p => ({ ...p, branch: b }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.branch === b ? COLORS.fioreOrange : COLORS.warmGray, color: editForm.branch === b ? COLORS.fioreBeyaz : COLORS.grayDark }}>{branches[b]?.shortName || branches[b]?.name}</div>)}</div></div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ flex: 1 }}><Bt onClick={async () => { await updateDoc(doc(db, 'staff', st.id), editForm); setStaffList(p => p.map(s => s.id === st.id ? { ...s, ...editForm } : s)); setEditingStaff(null); msg('✓ Güncellendi!'); }} color={COLORS.green} sm>Kaydet</Bt></div>
+                <div style={{ flex: 1 }}><Bt onClick={async () => {
+                  const updates = { ...editForm };
+                  // PIN değiştiyse hashle (4 haneli ise yeni PIN)
+                  if (updates.pin && updates.pin.length === 4 && /^\d{4}$/.test(updates.pin)) {
+                    updates.pin = await hashPin(updates.pin);
+                  }
+                  await updateDoc(doc(db, 'staff', st.id), updates);
+                  setStaffList(p => p.map(s => s.id === st.id ? { ...s, ...updates } : s));
+                  setEditingStaff(null); msg('Güncellendi!');
+                }} color={COLORS.green} sm>Kaydet</Bt></div>
                 <div style={{ flex: 1 }}><Bt onClick={() => setEditingStaff(null)} color={COLORS.gray} sm>İptal</Bt></div>
               </div>
             </div> : <>

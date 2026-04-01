@@ -129,3 +129,23 @@ export function sortCustomers(customers) {
     return (b.totalStamps || 0) - (a.totalStamps || 0);
   });
 }
+
+/**
+ * SHA-256 hash fonksiyonu
+ */
+export async function hashSHA256(text) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text + '_CDF_SALT_2026');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// SHA-256 hash fonksiyonu (PIN ve şifre güvenliği)
+export async function hashPin(pin) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode('CDF_SALT_2026_' + pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}

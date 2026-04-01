@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase.js';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { COLORS, FONTS } from '../config/constants.js';
+import { hashPin } from '../utils/helpers.js';
 
 const f = FONTS;
+const MAX_ATTEMPTS = 5;
+const LOCK_MINUTES = 15;
 
 export default function BusinessLogin() {
   const navigate = useNavigate();
@@ -18,17 +21,67 @@ export default function BusinessLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const checkBruteForce = async (identifier) => {
+    try {
+      const snap = await getDoc(doc(db, 'loginAttempts', identifier));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.locked && data.lockedUntil?.seconds > Date.now() / 1000) {
+          const remaining = Math.ceil((data.lockedUntil.seconds - Date.now() / 1000) / 60);
+          return `Çok fazla yanlış deneme. ${remaining} dk bekleyin.`;
+        }
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  const recordAttempt = async (identifier, success) => {
+    try {
+      const ref = doc(db, 'loginAttempts', identifier);
+      const snap = await getDoc(ref);
+      if (success) {
+        await updateDoc(ref, { attempts: 0, locked: false }).catch(() => {});
+        return;
+      }
+      const current = snap.exists() ? (snap.data().attempts || 0) : 0;
+      const newCount = current + 1;
+      const data = { attempts: newCount, lastAttempt: serverTimestamp(), locked: newCount >= MAX_ATTEMPTS };
+      if (newCount >= MAX_ATTEMPTS) data.lockedUntil = new Date(Date.now() + LOCK_MINUTES * 60000);
+      if (snap.exists()) await updateDoc(ref, data);
+      else await addDoc(collection(db, 'loginAttempts'), { ...data }); // fallback
+    } catch (e) {}
+  };
+
   const handleStaffLogin = async () => {
     if (!staffUser.trim() || !staffPin.trim()) { setError('Kullanıcı adı ve PIN girin'); return; }
     if (staffPin.length !== 4) { setError('PIN 4 haneli olmalıdır'); return; }
     setLoading(true); setError('');
+
+    // Brute-force kontrolü
+    const lockMsg = await checkBruteForce('staff_' + staffUser.trim().toLowerCase());
+    if (lockMsg) { setError(lockMsg); setLoading(false); return; }
+
     try {
       const q = query(collection(db, 'staff'), where('username', '==', staffUser.trim().toLowerCase()), where('status', '==', 'active'));
       const snapshot = await getDocs(q);
-      if (snapshot.empty) { setError('Kullanıcı bulunamadı'); setLoading(false); return; }
+      if (snapshot.empty) { setError('Kullanıcı bulunamadı'); await recordAttempt('staff_' + staffUser.trim().toLowerCase(), false); setLoading(false); return; }
       const staffDoc = snapshot.docs[0];
       const staffData = { id: staffDoc.id, ...staffDoc.data() };
-      if (staffData.pin !== staffPin) { setError('PIN hatalı'); setLoading(false); return; }
+
+      // PIN kontrolü: hash karşılaştır, düz metin fallback + otomatik migration
+      const hashedPin = await hashPin(staffPin);
+      if (staffData.pin === hashedPin) {
+        // Zaten hashli, eşleşti
+      } else if (staffData.pin === staffPin) {
+        // Düz metin eşleşti — hash'e migrate et
+        await updateDoc(doc(db, 'staff', staffDoc.id), { pin: hashedPin });
+      } else {
+        setError('PIN hatalı');
+        await recordAttempt('staff_' + staffUser.trim().toLowerCase(), false);
+        setLoading(false); return;
+      }
+
+      await recordAttempt('staff_' + staffUser.trim().toLowerCase(), true);
       await loginAsStaff(staffData);
       navigate('/personel');
     } catch (err) { setError('Giriş sırasında hata oluştu'); }
@@ -38,12 +91,36 @@ export default function BusinessLogin() {
   const handleAdminLogin = async () => {
     if (!adminUser.trim() || !adminPass.trim()) { setError('Kullanıcı adı ve şifre girin'); return; }
     setLoading(true); setError('');
+
+    const lockMsg = await checkBruteForce('admin_' + adminUser.trim());
+    if (lockMsg) { setError(lockMsg); setLoading(false); return; }
+
     try {
       const { doc: docRef, getDoc: getDocFn } = await import('firebase/firestore');
       const settingsDoc = await getDocFn(docRef(db, 'settings', 'admin'));
       if (!settingsDoc.exists()) { setError('Admin ayarları bulunamadı'); setLoading(false); return; }
       const adminData = settingsDoc.data();
-      if (adminUser.trim() !== adminData.username || adminPass !== adminData.password) { setError('Kullanıcı adı veya şifre hatalı'); setLoading(false); return; }
+
+      if (adminUser.trim() !== adminData.username) {
+        setError('Kullanıcı adı hatalı');
+        await recordAttempt('admin_' + adminUser.trim(), false);
+        setLoading(false); return;
+      }
+
+      // Şifre kontrolü: hash karşılaştır + düz metin fallback + migration
+      const hashedPass = await hashPin(adminPass);
+      if (adminData.password === hashedPass) {
+        // Hash eşleşti
+      } else if (adminData.password === adminPass) {
+        // Düz metin eşleşti — migrate et
+        await updateDoc(doc(db, 'settings', 'admin'), { password: hashedPass });
+      } else {
+        setError('Şifre hatalı');
+        await recordAttempt('admin_' + adminUser.trim(), false);
+        setLoading(false); return;
+      }
+
+      await recordAttempt('admin_' + adminUser.trim(), true);
       await loginAsAdmin({ ...adminData, role: 'admin' });
       navigate('/admin');
     } catch (err) { setError('Giriş sırasında hata oluştu'); }
