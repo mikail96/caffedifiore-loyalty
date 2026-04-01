@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment } from 'firebase/firestore';
-import { COLORS, FONTS, STAMP_CATEGORIES } from '../../config/constants.js';
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment, query, where } from 'firebase/firestore';
+import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
+import { calculateLevel } from '../../utils/helpers.js';
 
 const f = FONTS;
 const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.cardBg, borderRadius: 22, padding: 18, border: border || `1px solid ${COLORS.divider}`, fontFamily: f.body, ...style }}>{children}</div>;
@@ -14,6 +16,7 @@ const Inp = ({ label, value, onChange, placeholder, type = 'text' }) => <div sty
 
 const tabs = [
   { id: 'dash', label: 'Dashboard' },
+  { id: 'qr', label: 'QR' },
   { id: 'cust', label: 'Müşteri' },
   { id: 'staff', label: 'Personel' },
   { id: 'branch', label: 'Şube' },
@@ -45,6 +48,14 @@ export default function AdminPanel() {
   const [adminEdit, setAdminEdit] = useState(null);
   const [adminForm, setAdminForm] = useState({ username: '', password: '', phone: '' });
   const [editingCust, setEditingCust] = useState(null);
+  // QR states
+  const [qrSel, setQrSel] = useState(null); // selected customer from QR
+  const [qrStep, setQrStep] = useState(null); // 'cat' | 'confirm'
+  const [qrCat, setQrCat] = useState(null);
+  const [qrBusy, setQrBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const qrRef = useRef(null);
+  const scannerRef = useRef(null);
   const [sizes, setSizes] = useState({ hotSmall: '14oz', hotLarge: '16oz', coldSize: '16oz' });
   const [editingSizes, setEditingSizes] = useState(false);
   const [sizesForm, setSizesForm] = useState({});
@@ -170,6 +181,142 @@ export default function AdminPanel() {
             </div>
           </div>}
         </C>
+      </div>}
+
+      {/* ===== ADMIN QR ===== */}
+      {tab === 'qr' && <div style={{ padding: '14px 16px' }}>
+        {!qrSel ? (
+          <C>
+            <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12, textAlign: 'center' }}>Müşteri QR Kodunu Okut</div>
+            <div id="admin-qr-reader" ref={qrRef} style={{ borderRadius: 16, overflow: 'hidden', marginBottom: 12 }} />
+            {!scanning ? (
+              <Bt onClick={async () => {
+                setScanning(true);
+                try {
+                  const scanner = new Html5Qrcode('admin-qr-reader');
+                  scannerRef.current = scanner;
+                  await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 250 } }, async (text) => {
+                    try { await scanner.stop(); } catch(e) {}
+                    setScanning(false);
+                    if (!text.startsWith('CDF:')) { msg('Geçersiz QR kod!'); return; }
+                    const phone = text.split(':')[1];
+                    const q = query(collection(db, 'customers'), where('phone', '==', phone));
+                    const snap = await getDocs(q);
+                    if (snap.empty) { msg('Müşteri bulunamadı!'); return; }
+                    const d = snap.docs[0];
+                    setQrSel({ id: d.id, ...d.data() });
+                    msg(d.data().name + ' bulundu!');
+                  });
+                } catch (e) { msg('Kamera açılamadı'); setScanning(false); }
+              }}>Kamerayı Aç</Bt>
+            ) : (
+              <Bt onClick={async () => { try { await scannerRef.current?.stop(); } catch(e) {} setScanning(false); }} color={COLORS.gray}>Kamerayı Kapat</Bt>
+            )}
+            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: COLORS.grayDark }}>Konum kısıtlaması yok — her yerden işlem yapabilirsiniz</div>
+          </C>
+        ) : (
+          <div>
+            {/* Müşteri bilgisi */}
+            <C style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 42, height: 42, borderRadius: '50%', background: qrSel.level === 'goat' ? COLORS.goldBg : COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: qrSel.level === 'goat' ? COLORS.gold : COLORS.fioreOrange }}>{qrSel.name?.charAt(0)}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.fioreBeyaz }}>{qrSel.name}</div>
+                  <div style={{ fontSize: 12, color: COLORS.grayDark }}>Kart: {qrSel.currentCard || 0}/7 · Toplam: {qrSel.totalStamps || 0}</div>
+                </div>
+                <B text={qrSel.level === 'goat' ? 'GOAT' : qrSel.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={qrSel.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} />
+              </div>
+              {/* Damga göstergesi */}
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {Array.from({ length: 7 }, (_, i) => (
+                  <div key={i} style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: i < (qrSel.currentCard||0) ? COLORS.fioreOrange : 'transparent', border: i < (qrSel.currentCard||0) ? 'none' : `1.5px solid ${COLORS.warmGray}` }}>
+                    {i < (qrSel.currentCard||0) ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.fioreSiyah} strokeWidth="3" strokeLinecap="round"><path d="M20 6L9 17L4 12"/></svg> : <span style={{ color: COLORS.gray, fontSize: 10, fontWeight: 600 }}>{i+1}</span>}
+                  </div>
+                ))}
+                <div style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: (qrSel.currentCard||0) >= 7 ? COLORS.green : 'transparent', border: (qrSel.currentCard||0) >= 7 ? 'none' : `1.5px dashed ${COLORS.green}60` }}>
+                  {(qrSel.currentCard||0) >= 7 ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M20 6L9 17L4 12"/></svg> : <span style={{ color: COLORS.green, fontSize: 9, fontWeight: 800 }}>FREE</span>}
+                </div>
+              </div>
+            </C>
+
+            {/* İşlem seçimi */}
+            {!qrStep && <C style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>İşlem Seç</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Bt onClick={() => setQrStep('cat')} disabled={(qrSel.currentCard||0) >= 7}>Damga Ekle</Bt>
+                <Bt onClick={async () => {
+                  if ((qrSel.currentCard||0) < 7 || qrBusy) return;
+                  setQrBusy(true);
+                  await updateDoc(doc(db, 'customers', qrSel.id), { currentCard: 0 });
+                  await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.id, customerName: qrSel.name, staffId: 'admin', staffName: 'Admin QR', branchId: 'admin', type: 'free_redeemed', timestamp: serverTimestamp() });
+                  setQrSel({ ...qrSel, currentCard: 0 });
+                  msg('Sadakat ücretsiz verildi! Kart 0/7');
+                  setQrBusy(false);
+                }} disabled={(qrSel.currentCard||0) < 7} color={COLORS.green}>Sadakat Ücretsiz</Bt>
+                {qrSel.level === 'goat' && <Bt onClick={async () => {
+                  if (qrSel.goatMonthlyUsed || qrBusy) return;
+                  setQrBusy(true);
+                  await updateDoc(doc(db, 'customers', qrSel.id), { goatMonthlyUsed: true });
+                  await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.id, customerName: qrSel.name, staffId: 'admin', staffName: 'Admin QR', branchId: 'admin', type: 'goat_monthly', timestamp: serverTimestamp() });
+                  setQrSel({ ...qrSel, goatMonthlyUsed: true });
+                  msg('GOAT aylık ücretsiz verildi!');
+                  setQrBusy(false);
+                }} disabled={qrSel.goatMonthlyUsed} color={COLORS.gold}>GOAT Aylık Ücretsiz</Bt>}
+              </div>
+            </C>}
+
+            {/* Kategori seçimi */}
+            {qrStep === 'cat' && <C style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>Müşteri ne aldı?</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {STAMP_CATEGORIES.map(c => (
+                  <Bt key={c.id} onClick={() => { setQrCat(c.id); setQrStep('confirm'); }} sm>{c.name}</Bt>
+                ))}
+              </div>
+              <div style={{ marginTop: 8 }}><Bt onClick={() => setQrStep(null)} color={COLORS.gray} sm>Geri</Bt></div>
+            </C>}
+
+            {/* Onay */}
+            {qrStep === 'confirm' && <C style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8 }}>Damga Onayı</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.fioreBeyaz }}>{qrSel.name}</div>
+              <div style={{ fontSize: 12, color: COLORS.grayDark, marginBottom: 12 }}>{STAMP_CATEGORIES.find(c => c.id === qrCat)?.name} · Kart: {(qrSel.currentCard||0)+1}/7</div>
+              <Bt onClick={async () => {
+                if (qrBusy) return;
+                setQrBusy(true);
+                const nc = (qrSel.currentCard||0)+1, nt = (qrSel.totalStamps||0)+1;
+                let nl = qrSel.level;
+                if (nt >= 40 && qrSel.level !== 'goat') nl = 'goat';
+                else if (nt >= 16 && qrSel.level === 'misafir') nl = 'mudavim';
+                await updateDoc(doc(db, 'customers', qrSel.id), { currentCard: nc, totalStamps: nt, level: nl });
+                await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.id, customerName: qrSel.name, staffId: 'admin', staffName: 'Admin QR', branchId: 'admin', type: 'stamp', productCategory: qrCat, cardBefore: qrSel.currentCard||0, cardAfter: nc, timestamp: serverTimestamp() });
+                // Referans bonus
+                if (nt === 1 && qrSel.referredBy) {
+                  try {
+                    const refDoc = await getDoc(doc(db, 'customers', qrSel.referredBy));
+                    if (refDoc.exists()) {
+                      const rd = refDoc.data();
+                      const rnc = (rd.currentCard||0)+1 > 7 ? rd.currentCard||0 : (rd.currentCard||0)+1;
+                      const rnt = (rd.totalStamps||0)+1;
+                      let rnl = rd.level;
+                      if (rnt >= 40 && rd.level !== 'goat') rnl = 'goat';
+                      else if (rnt >= 16 && rd.level === 'misafir') rnl = 'mudavim';
+                      await updateDoc(doc(db, 'customers', qrSel.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
+                      await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.referredBy, customerName: rd.name, staffId: 'admin', staffName: 'Referans Bonus', branchId: 'admin', type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
+                    }
+                  } catch(e) {}
+                }
+                setQrSel({ ...qrSel, currentCard: nc, totalStamps: nt, level: nl });
+                msg(`Damga: ${qrSel.name} ${nc}/7`);
+                setQrStep(null); setQrCat(null);
+                setQrBusy(false);
+              }} color={COLORS.green}>Onayla</Bt>
+              <div style={{ marginTop: 8 }}><Bt onClick={() => { setQrStep('cat'); setQrCat(null); }} color={COLORS.gray} sm>Geri</Bt></div>
+            </C>}
+
+            <div onClick={() => { setQrSel(null); setQrStep(null); setQrCat(null); }} style={{ textAlign: 'center', fontSize: 13, color: COLORS.blue, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>Yeni QR Okut</div>
+          </div>
+        )}
       </div>}
 
       {/* ===== MÜŞTERİLER ===== */}
