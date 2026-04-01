@@ -1,30 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // ===== MÜŞTERİLER =====
-    // Giriş yapmış kullanıcı kendi verisini okur, herkes (personel dahil) günceller
+    // Okuma: açık (personel/admin QR okuma için lazım)
+    // Oluşturma: sadece auth sahibi kendi kaydını oluşturur
+    // Güncelleme: doğrulama ile (damga sınırları)
+    // Silme: açık (admin silme için)
     match /customers/{custId} {
-      allow read: if request.auth != null || true;
-      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'email', 'level'])
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.auth.uid == custId
+                    && request.resource.data.keys().hasAll(['name', 'phone', 'email', 'level'])
                     && request.resource.data.level == 'misafir'
                     && request.resource.data.currentCard == 0
-                    && request.resource.data.totalStamps == 0
-                    && request.resource.data.name is string
-                    && request.resource.data.phone is string
-                    && request.resource.data.email is string;
+                    && request.resource.data.totalStamps == 0;
       allow update: if request.resource.data.currentCard is int
                     && request.resource.data.totalStamps is int
                     && request.resource.data.currentCard >= 0
                     && request.resource.data.currentCard <= 7
                     && request.resource.data.totalStamps >= 0
-                    && request.resource.data.totalStamps <= 9999
                     && request.resource.data.level in ['misafir', 'mudavim', 'goat'];
       allow delete: if true;
     }
 
     // ===== DAMGA LOGLARI =====
-    // Oluşturma izni — veri doğrulaması ile, silme/düzenleme yasak
+    // Oluşturma: doğrulama ile — düzenleme/silme KESİNLİKLE YASAK
     match /stampLogs/{logId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasAll(['customerId', 'customerName', 'type', 'timestamp'])
@@ -35,7 +36,7 @@ service cloud.firestore {
     }
 
     // ===== PERSONEL =====
-    // Herkes okuyabilir (login kontrolü için), yazma açık (admin yönetiyor)
+    // TODO: PIN'ler Cloud Function ile gizlenecek
     match /staff/{staffId} {
       allow read: if true;
       allow create, update: if request.resource.data.keys().hasAll(['name', 'username', 'pin', 'role', 'branch', 'status'])
@@ -46,31 +47,39 @@ service cloud.firestore {
     }
 
     // ===== AYARLAR =====
-    // Admin şifre + boyut ayarları
+    // Yeni ayar oluşturulamaz, silinemez — sadece güncelleme
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if true;
+      allow update: if true;
+      allow create, delete: if false;
     }
 
     // ===== KAMPANYALAR =====
+    // Silinemez, doğrulama ile oluşturulur
     match /campaigns/{campId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasAll(['title', 'active'])
-                    && request.resource.data.title is string;
-      allow update, delete: if true;
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() > 0
+                    && request.resource.data.title.size() < 200;
+      allow update: if true;
+      allow delete: if false;
     }
 
     // ===== ŞUBELER =====
+    // Silinemez
     match /branches/{branchId} {
       allow read: if true;
-      allow write: if request.resource.data.name is string;
+      allow create, update: if request.resource.data.name is string;
+      allow delete: if false;
     }
 
     // ===== MENÜ =====
     match /menuItems/{itemId} {
       allow read: if true;
-      allow write: if request.resource.data.name is string
+      allow create, update: if request.resource.data.name is string
                    && request.resource.data.category is string;
+      allow delete: if true;
     }
 
     // ===== LOGIN GİRİŞİM TAKİBİ =====

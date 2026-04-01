@@ -35,7 +35,16 @@ export default function CustomerLogin() {
   };
 
   // Giriş yap
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [lockUntil, setLockUntil] = useState(0);
+
   const handleLogin = async () => {
+    // Kilit kontrolü
+    if (lockUntil > Date.now()) {
+      const mins = Math.ceil((lockUntil - Date.now()) / 60000);
+      setError(`Çok fazla yanlış deneme. ${mins} dakika bekleyin.`);
+      return;
+    }
     const clean = phone.replace(/\D/g, '');
     if (clean.length < 10) { setError('Geçerli bir telefon numarası girin'); return; }
     if (password.length < 4) { setError('Şifrenizi girin'); return; }
@@ -44,18 +53,22 @@ export default function CustomerLogin() {
     try {
       customerEmail = await findEmailByPhone(phone);
       if (!customerEmail) { setError('Bu numarayla hesap bulunamadı. Kayıt olun.'); setLoading(false); return; }
-      console.log('Login attempt:', { phone: phone, email: customerEmail });
       await signInWithEmailAndPassword(auth, customerEmail, password);
-      // Tek oturum: sessionId oluştur
+      setLoginAttempts(0); // Başarılı — sayacı sıfırla
       const sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
       await updateDoc(doc(db, 'customers', auth.currentUser.uid), { sessionId: sid });
       sessionStorage.setItem('cdf_session', sid);
       await refreshUser();
       navigate('/musteri');
     } catch (err) {
-      console.log('Login error:', err.code, err.message);
-      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError('Şifre hatalı. Tekrar deneyin.');
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
+      if (newAttempts >= 5) {
+        const lockTime = Date.now() + 15 * 60 * 1000;
+        setLockUntil(lockTime);
+        setError('5 yanlış deneme. 15 dakika boyunca giriş yapılamaz.');
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError(`Şifre hatalı. (${5 - newAttempts} deneme hakkınız kaldı)`);
       } else if (err.code === 'auth/too-many-requests') {
         setError('Çok fazla deneme. Biraz bekleyin.');
       } else {
