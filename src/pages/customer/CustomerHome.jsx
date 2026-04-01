@@ -75,21 +75,8 @@ export default function CustomerHome() {
 
   const needsScroll = campaigns.length > 0 || isGoat;
 
-  useEffect(() => {
-    if (!needsScroll) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    }
-    return () => { document.body.style.overflow = ''; document.body.style.position = ''; document.body.style.width = ''; };
-  }, [needsScroll]);
-
   return (
-    <div style={{ minHeight: '100vh', height: needsScroll ? 'auto' : '100vh', overflow: needsScroll ? 'auto' : 'hidden', background: COLORS.cream, fontFamily: f.body }}>
+    <div style={{ minHeight: '100vh', height: needsScroll ? 'auto' : '100vh', overflow: needsScroll ? 'auto' : 'hidden', background: COLORS.cream, fontFamily: f.body, overscrollBehavior: 'none' }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 18px', borderBottom: `1px solid ${COLORS.divider}` }}>
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
           <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 22, opacity: 0.9 }} />
