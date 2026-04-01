@@ -63,8 +63,10 @@ export default function CustomerApp() {
     }
   };
 
+  const noScroll = activeTab === 'home' || activeTab === 'invite';
+
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 60, position: 'relative' }}>
+    <div style={{ height: noScroll ? '100vh' : 'auto', minHeight: noScroll ? undefined : '100vh', overflow: noScroll ? 'hidden' : 'auto', paddingBottom: noScroll ? 0 : 60, position: 'relative' }}>
       {/* Bildirim izin promptu */}
       {showNotifPrompt && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, padding: '12px 16px', background: 'linear-gradient(135deg, #3D2B1F, #2A1810)', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>

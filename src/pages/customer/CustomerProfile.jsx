@@ -39,8 +39,8 @@ export default function CustomerProfile() {
           ))}
         </div>
         <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}` }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 14 }}>Program Kuralları</div>
-          {['Damgalar arası minimum 15 dakika bekleme süresi vardır.','Kahve, blend, kokteyl ve sıcak çikolata damga kazandırır.','Çay, soğuk içecek, kutulu ürünler ve tatlılar damga kazandırmaz.','7 damga tamamlandığında 1 ücretsiz kahve hakkı kazanılır.','Misafir: 0–15 | Müdavim: 16–39 | GOAT: 40+','GOAT üyelere her ay dilediği bir kahve ücretsiz verilir.','GOAT üyeler tüm alışverişlerinde %10 indirim hakkına sahiptir.',...(isGoat?['Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz.']:[])].map((r,i)=>(
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 14 }}>Loyalty Kuralları</div>
+          {['Damgalar arası minimum 15 dakika bekleme süresi vardır.','Kahve, blend, kokteyl ve sıcak çikolata damga kazandırır.','Çay, soğuk içecek, kutulu ürünler ve tatlılar damga kazandırmaz.','Her alışveriş tek damga hakkı verir. Aynı anda birden fazla kahve alınsa dahi tek damga eklenir.','Her müşteri damga almak için kendi hesabından QR kodunu okutmalıdır.','7 damga tamamlandığında 1 ücretsiz kahve hakkı kazanılır.','Misafir: 0–15 | Müdavim: 16–39 | GOAT: 40+','GOAT üyelere her ay dilediği bir kahve ücretsiz verilir.','GOAT üyeler tüm alışverişlerinde %10 indirim hakkına sahiptir.',...(isGoat?['Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz.']:[])].map((r,i)=>(
             <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i?`1px solid ${COLORS.divider}`:'none' }}>
               <div style={{ width: 5, height: 5, borderRadius: '50%', background: COLORS.fioreOrange, marginTop: 6, flexShrink: 0 }} />
               <span style={{ fontSize: 13, color: COLORS.grayDark, fontWeight: 500, lineHeight: 1.6 }}>{r}</span>
