@@ -509,16 +509,16 @@ export default function AdminPanel() {
         {campaigns.filter(c => c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8 }}>Aktif</div>{campaigns.filter(c => c.active).map(c => <C key={c.id} style={{ marginBottom: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}><div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>{c.title}</div>{c.description && <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 3 }}>{c.description}</div>}</div><B text="AKTİF" color={COLORS.green} /></div>
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <div style={{ flex: 1 }}><Bt onClick={async () => { await updateDoc(doc(db, 'campaigns', c.id), { active: false }); setCampaigns(p => p.map(x => x.id === c.id ? { ...x, active: false } : x)); msg('Durduruldu'); }} color={COLORS.gray} sm>Durdur</Bt></div>
-            <div style={{ flex: 1 }}><Bt onClick={async () => { if (!confirm(`"${c.title}" kampanyası silinsin mi?`)) return; await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Kampanya silindi'); }} color={COLORS.red} sm>Kalıcı Sil</Bt></div>
+            <div style={{ flex: 1 }}><Bt onClick={async () => { try { await updateDoc(doc(db, 'campaigns', c.id), { active: false }); setCampaigns(p => p.map(x => x.id === c.id ? { ...x, active: false } : x)); msg('Durduruldu'); } catch(e) { msg('Hata: ' + e.message); } }} color={COLORS.gray} sm>Durdur</Bt></div>
+            <div style={{ flex: 1 }}><Bt onClick={async () => { try { await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Silindi'); } catch(e) { msg('Silme hatası: ' + e.message); } }} color={COLORS.red} sm>Sil</Bt></div>
           </div>
         </C>)}</>}
         {campaigns.filter(c => !c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8, marginTop: 14 }}>Geçmiş</div>{campaigns.filter(c => !c.active).map(c => <C key={c.id} style={{ marginBottom: 6, padding: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{c.title}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <B text="Bitti" color={COLORS.gray} />
-              <span onClick={async () => { await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Silindi'); }} style={{ fontSize: 11, color: COLORS.red, fontWeight: 700, cursor: 'pointer' }}>Sil</span>
+              <div onClick={async () => { try { await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Silindi'); } catch(e) { msg('Hata: ' + e.message); } }} style={{ background: COLORS.red, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8, cursor: 'pointer' }}>Sil</div>
             </div>
           </div>
         </C>)}</>}
