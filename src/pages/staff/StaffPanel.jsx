@@ -7,7 +7,7 @@ import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/cons
 import { calculateDistance } from '../../utils/helpers.js';
 
 const f = FONTS;
-const Card = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 22, padding: 18, boxShadow: '0 4px 20px rgba(44,30,20,0.04)', border: border || 'none', fontFamily: f.body, ...style }}>{children}</div>;
+const Card = ({ children, style = {}, border }) => <div style={{ background: COLORS.cardBg, borderRadius: 22, padding: 18, border: `1px solid ${COLORS.divider}`, border: border || 'none', fontFamily: f.body, ...style }}>{children}</div>;
 const Btn = ({ children, color = COLORS.fioreOrange, disabled = false, onClick }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: 50, padding: '14px', textAlign: 'center', fontWeight: 700, fontSize: 14, width: '100%', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1, fontFamily: f.body, letterSpacing: 0.3 }}>{children}</div>;
 const Badge = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.fioreBeyaz, background: color, padding: '4px 12px', borderRadius: 20, fontFamily: f.body }}>{text}</span>;
 const LvBadge = ({ level }) => { const c = { misafir: ['Fiore Misafir', COLORS.fioreOrange, COLORS.orangeGlow], mudavim: ['Fiore Müdavim', COLORS.fioreOrange, COLORS.orangeGlow], goat: ['Fiore GOAT', COLORS.gold, COLORS.goldBg] }[level]; return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: c[2], padding: '6px 14px', borderRadius: 24, fontSize: 12, color: c[1], fontWeight: 700, border: `1.5px solid ${c[1]}20`, fontFamily: f.body }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: c[1] }} />{c[0]}</div>; };
@@ -231,7 +231,7 @@ export default function StaffPanel() {
 
       {/* İstatistik */}
       <div style={{ display: 'flex', gap: 10, padding: '14px 20px' }}>
-        {[[tStamp, 'Damga', COLORS.fioreOrange], [tFree, 'Ücretsiz', COLORS.green]].map(([v, l, c]) => <div key={l} style={{ flex: 1, background: COLORS.fioreBeyaz, borderRadius: 22, padding: '16px', textAlign: 'center', boxShadow: '0 4px 20px rgba(44,30,20,0.04)' }}><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 4 }}>{l}</div></div>)}
+        {[[tStamp, 'Damga', COLORS.fioreOrange], [tFree, 'Ücretsiz', COLORS.green]].map(([v, l, c]) => <div key={l} style={{ flex: 1, background: COLORS.cardBg, borderRadius: 22, padding: '16px', textAlign: 'center', border: `1px solid ${COLORS.divider}` }}><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 4 }}>{l}</div></div>)}
       </div>
 
       {/* GPS */}

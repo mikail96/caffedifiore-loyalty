@@ -52,7 +52,7 @@ export default function BusinessLogin() {
 
   const inputStyle = {
     width: '100%', padding: '14px 16px', borderRadius: 14,
-    border: `1.5px solid ${COLORS.grayLight}`, fontSize: 14,
+    border: `1.5px solid ${COLORS.divider}`, fontSize: 14, color: COLORS.fioreBeyaz,
     boxSizing: 'border-box', background: COLORS.warmGray, outline: 'none', fontFamily: f.body,
   };
 
@@ -60,7 +60,7 @@ export default function BusinessLogin() {
     <div style={{ minHeight: '100vh', background: `radial-gradient(ellipse at 50% 30%, #1A1410 0%, ${COLORS.cream} 70%)`, fontFamily: f.body }}>
       <div style={{ padding: '50px 24px 24px', textAlign: 'center' }}>
         <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 38, opacity: 0.95 }} />
-        <div style={{ fontSize: 13, color: COLORS.fioreOrange, fontFamily: f.heading, marginTop: 10, letterSpacing: 2, opacity: 0.7, fontStyle: 'italic' }}>Sei Perfetto</div>
+        <div style={{ fontSize: 13, color: COLORS.fioreOrange, fontFamily: FONTS.script, marginTop: 10, letterSpacing: 2 }}>Sei Perfetto</div>
       </div>
 
       <div style={{ background: COLORS.cardBg, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 150px)', padding: '28px 24px' }}>
@@ -84,7 +84,7 @@ export default function BusinessLogin() {
         {tab === 'staff' && <>
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Kullanıcı Adı</div>
-            <input placeholder="elif.arslan" value={staffUser} onChange={e => setStaffUser(e.target.value)} style={inputStyle} autoCapitalize="off" autoCorrect="off" />
+            <input placeholder="kullanıcı adı" value={staffUser} onChange={e => setStaffUser(e.target.value)} style={inputStyle} autoCapitalize="off" autoCorrect="off" />
           </div>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>PIN Kodu (4 hane)</div>
@@ -93,7 +93,7 @@ export default function BusinessLogin() {
 
           {error && <div style={{ background: 'rgba(217,68,68,0.06)', borderRadius: 14, padding: '12px 16px', marginBottom: 16, borderLeft: `3px solid ${COLORS.red}` }}><div style={{ fontSize: 12, color: COLORS.red, fontWeight: 600 }}>{error}</div></div>}
 
-          <div onClick={loading ? undefined : handleStaffLogin} style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 50, padding: '16px', textAlign: 'center', fontWeight: 700, fontSize: 15, cursor: loading ? 'wait' : 'pointer' }}>
+          <div onClick={loading ? undefined : handleStaffLogin} style={{ background: loading ? COLORS.warmGray : COLORS.fioreOrange, color: '#fff', borderRadius: 50, padding: '16px', textAlign: 'center', fontWeight: 700, fontSize: 15, cursor: loading ? 'wait' : 'pointer' }}>
             {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </div>
 

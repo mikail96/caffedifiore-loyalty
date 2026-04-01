@@ -7,10 +7,10 @@ import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
 
 const f = FONTS;
-const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.fioreBeyaz, borderRadius: 22, padding: 18, boxShadow: '0 4px 20px rgba(44,30,20,0.04)', border: border || 'none', fontFamily: f.body, ...style }}>{children}</div>;
+const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.cardBg, borderRadius: 22, padding: 18, border: border || `1px solid ${COLORS.divider}`, fontFamily: f.body, ...style }}>{children}</div>;
 const B = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.fioreBeyaz, background: color, padding: '4px 12px', borderRadius: 20, fontFamily: f.body }}>{text}</span>;
 const Bt = ({ children, color = COLORS.fioreOrange, onClick, sm, disabled }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: sm ? 12 : 50, padding: sm ? '8px 14px' : '14px', textAlign: 'center', fontWeight: 700, fontSize: sm ? 12 : 14, cursor: disabled ? 'not-allowed' : 'pointer', width: '100%', opacity: disabled ? 0.4 : 1, fontFamily: f.body }}>{children}</div>;
-const Inp = ({ label, value, onChange, placeholder, type = 'text' }) => <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 5, fontFamily: f.body }}>{label}</div><input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 14, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: f.body }} /></div>;
+const Inp = ({ label, value, onChange, placeholder, type = 'text' }) => <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 5, fontFamily: f.body }}>{label}</div><input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 14, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: f.body, color: COLORS.fioreBeyaz }} /></div>;
 
 const tabs = [
   { id: 'dash', label: 'Ana' },
@@ -174,7 +174,7 @@ export default function AdminPanel() {
 
       {/* ===== MÜŞTERİLER ===== */}
       {tab === 'cust' && <div style={{ padding: '14px 16px' }}>
-        <div style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, border: `1.5px solid ${COLORS.grayLight}`, marginBottom: 10 }}>
+        <div style={{ background: COLORS.cardBg, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, border: `1.5px solid ${COLORS.grayLight}`, marginBottom: 10 }}>
           <span>🔍</span><input placeholder="İsim veya telefon ara..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: 13, flex: 1, background: 'transparent' }} />
         </div>
         {filtered.map(c => <C key={c.id} style={{ marginBottom: 8, padding: 14 }}>
@@ -202,7 +202,7 @@ export default function AdminPanel() {
       {tab === 'staff' && <div style={{ padding: '14px 16px' }}>
         {/* Yeni Personel */}
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Personel Ekle</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>Yeni Personel Ekle</div>
           <Inp label="Ad Soyad" value={newStaff.name} onChange={v => setNewStaff(p => ({ ...p, name: v }))} placeholder="Elif Arslan" />
           <Inp label="Kullanıcı Adı" value={newStaff.username} onChange={v => setNewStaff(p => ({ ...p, username: v.toLowerCase().replace(/\s/g, '.') }))} placeholder="elif.arslan" />
           <Inp label="PIN (4 hane)" value={newStaff.pin} onChange={v => { if (/^\d{0,4}$/.test(v)) setNewStaff(p => ({ ...p, pin: v })); }} placeholder="1234" />
@@ -225,7 +225,7 @@ export default function AdminPanel() {
 
         {/* Mevcut personel */}
         {branchKeys.map(bid => <div key={bid} style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>{branches[bid]?.name || branches[bid]?.shortName}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>{branches[bid]?.name || branches[bid]?.shortName}</div>
           {staffList.filter(s => s.branch === bid).map(st => <C key={st.id} style={{ marginBottom: 8 }}>
             {editingStaff === st.id ? <div>
               <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.blue, marginBottom: 10 }}>Düzenle: {st.name}</div>
@@ -263,7 +263,7 @@ export default function AdminPanel() {
       {/* ===== ŞUBE YÖNETİMİ ===== */}
       {tab === 'branch' && <div style={{ padding: '14px 16px' }}>
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Şube Ekle</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>Yeni Şube Ekle</div>
           <Inp label="Şube Adı" value={newBranch.name} onChange={v => setNewBranch(p => ({ ...p, name: v }))} placeholder="CaffeDiFiore Yeni AVM" />
           <Inp label="Kısa Ad" value={newBranch.shortName} onChange={v => setNewBranch(p => ({ ...p, shortName: v }))} placeholder="Yeni AVM" />
           <Bt onClick={async () => {
@@ -313,7 +313,7 @@ export default function AdminPanel() {
       {/* ===== KAMPANYALAR ===== */}
       {tab === 'camp' && <div style={{ padding: '14px 16px' }}>
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Kampanya</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>Yeni Kampanya</div>
           <Inp label="Başlık" value={newCamp.title} onChange={v => setNewCamp(p => ({ ...p, title: v }))} placeholder="Hafta Sonu %20 İndirim" />
           <Inp label="Açıklama" value={newCamp.desc} onChange={v => setNewCamp(p => ({ ...p, desc: v }))} placeholder="Kampanya detayı..." />
           <div style={{ marginBottom: 12 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Hedef</div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{[['all', 'Tüm Üyeler'], ['goat', 'GOAT'], ['mudavim', 'Müdavim'], ['misafir', 'Yeni']].map(([v, l]) => <div key={v} onClick={() => setNewCamp(p => ({ ...p, target: v }))} style={{ padding: '6px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: newCamp.target === v ? COLORS.fioreOrange : COLORS.warmGray, color: newCamp.target === v ? COLORS.fioreBeyaz : COLORS.grayDark }}>{l}</div>)}</div></div>
@@ -324,8 +324,8 @@ export default function AdminPanel() {
             setNewCamp({ title: '', desc: '', target: 'all' }); msg('✓ Yayınlandı!');
           }} color={COLORS.green}>Yayınla</Bt>
         </C>
-        {campaigns.filter(c => c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Aktif</div>{campaigns.filter(c => c.active).map(c => <C key={c.id} style={{ marginBottom: 8 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><div><div style={{ fontSize: 14, fontWeight: 700 }}>{c.title}</div>{c.description && <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 3 }}>{c.description}</div>}</div><B text="AKTİF" color={COLORS.green} /></div><div style={{ display: 'flex', gap: 8, marginTop: 10 }}><div style={{ flex: 1 }}><Bt onClick={async () => { await updateDoc(doc(db, 'campaigns', c.id), { active: false }); setCampaigns(p => p.map(x => x.id === c.id ? { ...x, active: false } : x)); msg('Durduruldu'); }} color={COLORS.gray} sm>Durdur</Bt></div><div style={{ flex: 1 }}><Bt onClick={async () => { await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Silindi'); }} color={COLORS.red} sm>Sil</Bt></div></div></C>)}</>}
-        {campaigns.filter(c => !c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, marginTop: 14 }}>Geçmiş</div>{campaigns.filter(c => !c.active).map(c => <div key={c.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}><div style={{ fontSize: 13, fontWeight: 700 }}>{c.title}</div><B text="Bitti" color={COLORS.gray} /></div>)}</>}
+        {campaigns.filter(c => c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8 }}>Aktif</div>{campaigns.filter(c => c.active).map(c => <C key={c.id} style={{ marginBottom: 8 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><div><div style={{ fontSize: 14, fontWeight: 700 }}>{c.title}</div>{c.description && <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 3 }}>{c.description}</div>}</div><B text="AKTİF" color={COLORS.green} /></div><div style={{ display: 'flex', gap: 8, marginTop: 10 }}><div style={{ flex: 1 }}><Bt onClick={async () => { await updateDoc(doc(db, 'campaigns', c.id), { active: false }); setCampaigns(p => p.map(x => x.id === c.id ? { ...x, active: false } : x)); msg('Durduruldu'); }} color={COLORS.gray} sm>Durdur</Bt></div><div style={{ flex: 1 }}><Bt onClick={async () => { await deleteDoc(doc(db, 'campaigns', c.id)); setCampaigns(p => p.filter(x => x.id !== c.id)); msg('Silindi'); }} color={COLORS.red} sm>Sil</Bt></div></div></C>)}</>}
+        {campaigns.filter(c => !c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8, marginTop: 14 }}>Geçmiş</div>{campaigns.filter(c => !c.active).map(c => <div key={c.id} style={{ background: COLORS.cardBg, borderRadius: 12, padding: '10px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}><div style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{c.title}</div><B text="Bitti" color={COLORS.gray} /></div>)}</>}
       </div>}
 
       {/* ===== MENÜ YÖNETİMİ ===== */}
@@ -363,7 +363,7 @@ export default function AdminPanel() {
 
         {/* Yeni ürün ekle */}
         <C style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Yeni Ürün Ekle</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>Yeni Ürün Ekle</div>
           <Inp label="Ürün Adı" value={newMenu.name} onChange={v => setNewMenu(p => ({ ...p, name: v }))} placeholder="Caramel Latte" />
           <div style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Kategori</div>
@@ -422,13 +422,13 @@ export default function AdminPanel() {
         </C>
 
         {/* Menü listesi — kategoriye göre */}
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>Menü ({menuItems.filter(m => m.active).length} ürün)</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>Menü ({menuItems.filter(m => m.active).length} ürün)</div>
         {groupByCategory(menuItems).map(cat => (
           <div key={cat.category} style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange, marginBottom: 6 }}>{cat.icon} {cat.category}</div>
             {cat.items.map(item => {
               const isEd = editingMenuItem === item.id;
-              return <div key={item.id} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4 }}>
+              return <div key={item.id} style={{ background: COLORS.cardBg, borderRadius: 12, padding: '10px 14px', marginBottom: 4 }}>
                 {isEd ? (
                   <div>
                     <Inp label="Ürün Adı" value={menuEditForm.name || ''} onChange={v => setMenuEditForm(p => ({ ...p, name: v }))} />
@@ -455,7 +455,7 @@ export default function AdminPanel() {
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>{item.name}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{item.name}</span>
                       {item.isGoat && <B text="#GOAT" color={COLORS.gold} />}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -480,7 +480,7 @@ export default function AdminPanel() {
       {/* ===== İŞLEM LOG ===== */}
       {tab === 'logs' && <div style={{ padding: '14px 16px' }}>
         <div style={{ fontSize: 11, color: COLORS.grayDark, marginBottom: 10, background: COLORS.warmGray, padding: '8px 12px', borderRadius: 10 }}>Tüm işlem geçmişi</div>
-        {stampLogs.length === 0 ? <C style={{ textAlign: 'center', padding: 30 }}><div style={{ color: COLORS.gray }}>Henüz işlem yok</div></C> : stampLogs.map((l, i) => <div key={l.id || i} style={{ background: COLORS.fioreBeyaz, borderRadius: 14, padding: '12px 16px', marginBottom: 6 }}>
+        {stampLogs.length === 0 ? <C style={{ textAlign: 'center', padding: 30 }}><div style={{ color: COLORS.gray }}>Henüz işlem yok</div></C> : stampLogs.map((l, i) => <div key={l.id || i} style={{ background: COLORS.cardBg, borderRadius: 14, padding: '12px 16px', marginBottom: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div><span style={{ fontSize: 14, fontWeight: 700 }}>{l.customerName}</span><span style={{ fontSize: 11, color: COLORS.gray, marginLeft: 8 }}>{l.timestamp?.toDate?.()?.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + ' ' + l.timestamp?.toDate?.()?.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) || ''}</span></div>
             <B text={l.type === 'stamp' ? 'DAMGA' : l.type === 'goat_monthly' ? 'GOAT' : l.type === 'admin_add' ? '+ADMIN' : l.type === 'admin_remove' ? '-ADMIN' : 'ÜCRETSİZ'} color={l.type === 'stamp' ? COLORS.fioreOrange : l.type === 'goat_monthly' ? COLORS.gold : l.type?.startsWith('admin') ? COLORS.purple : COLORS.green} />

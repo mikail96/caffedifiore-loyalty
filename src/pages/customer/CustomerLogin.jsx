@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where
 import { COLORS, FONTS } from '../../config/constants.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
-const inputStyle = { width: '100%', padding: '14px', borderRadius: 12, border: `2px solid ${COLORS.grayLight}`, fontSize: 15, fontWeight: 600, boxSizing: 'border-box', outline: 'none', letterSpacing: 0 };
+const inputStyle = { width: '100%', padding: '14px', borderRadius: 12, border: `1.5px solid ${COLORS.divider}`, fontSize: 15, fontWeight: 600, boxSizing: 'border-box', outline: 'none', letterSpacing: 0, background: COLORS.warmGray, color: COLORS.fioreBeyaz };
 
 export default function CustomerLogin() {
   const navigate = useNavigate();
@@ -138,7 +138,7 @@ export default function CustomerLogin() {
       <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 20px 10px' }}>
         <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 40 }} />
       </div>
-      <div style={{ textAlign: 'center', color: COLORS.fioreOrange, fontStyle: 'italic', fontSize: 13, fontWeight: 500, marginBottom: 20 }}>Sei Perfetto</div>
+      <div style={{ textAlign: 'center', color: COLORS.fioreOrange, fontFamily: FONTS.script, fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Sei Perfetto</div>
 
       <div style={{ background: COLORS.cardBg, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 130px)', padding: '28px 24px' }}>
         <div style={{ fontSize: 24, fontWeight: 700, fontFamily: FONTS.heading, color: COLORS.fioreBeyaz, color: COLORS.fioreBeyaz, marginBottom: 4 }}>
@@ -196,7 +196,7 @@ export default function CustomerLogin() {
         {/* Ana buton */}
         <div
           onClick={loading ? undefined : (mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleForgot)}
-          style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 14, padding: '16px', textAlign: 'center', fontWeight: 800, fontSize: 15, cursor: loading ? 'wait' : 'pointer', width: '100%' }}
+          style={{ background: loading ? COLORS.grayLight : COLORS.fioreOrange, color: COLORS.fioreBeyaz, borderRadius: 50, padding: '16px', textAlign: 'center', fontWeight: 700, fontSize: 15, cursor: loading ? 'wait' : 'pointer', width: '100%' }}
         >
           {loading ? 'İşleniyor...' : mode === 'login' ? 'Giriş Yap' : mode === 'register' ? 'Kayıt Ol' : 'Şifre Sıfırla'}
         </div>
@@ -218,8 +218,8 @@ export default function CustomerLogin() {
             {[['7', "7'de 1", 'Ücretsiz', COLORS.fioreOrange], ['G', 'GOAT', 'Ayrıcalık', COLORS.gold], ['%', 'Özel', 'Kampanya', COLORS.green]].map(([ic, t1, t2, c]) => (
               <div key={t1} style={{ textAlign: 'center' }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${c}10`, border: `1.5px solid ${c}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', fontSize: 16, fontWeight: 800, color: c }}>{ic}</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.fioreSiyah }}>{t1}</div>
-                <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 2 }}>{t2}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.fioreBeyaz }}>{t1}</div>
+                <div style={{ fontSize: 10, color: COLORS.grayDark, marginTop: 2 }}>{t2}</div>
               </div>
             ))}
           </div>
