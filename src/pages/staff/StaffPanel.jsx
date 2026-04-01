@@ -217,27 +217,27 @@ export default function StaffPanel() {
       {toast && <div style={{ position: 'fixed', top: 40, left: '50%', transform: 'translateX(-50%)', background: tt === 'success' ? COLORS.green : tt === 'error' ? COLORS.red : COLORS.gold, color: COLORS.fioreBeyaz, padding: '12px 24px', borderRadius: 14, fontWeight: 700, fontSize: 14, zIndex: 999, boxShadow: '0 4px 20px rgba(0,0,0,0.25)', maxWidth: 340, textAlign: 'center' }}>{toast}</div>}
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(180deg, #3D2B1F, #2A1810)', padding: '16px 20px 14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24 }} /></div>
+      <div style={{ background: 'linear-gradient(170deg, #3D2B1F, #261810)', padding: '20px 24px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24, opacity: 0.95 }} /></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: 10, color: COLORS.fioreOrange, fontWeight: 800, letterSpacing: 2 }}>PERSONEL</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.fioreBeyaz, marginTop: 2 }}>{userData?.name}</div>
-            <div style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, marginTop: 2 }}>{branchName}</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: 3 }}>PERSONEL</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 4 }}>{userData?.name}</div>
+            <div style={{ fontSize: 12, color: COLORS.fioreOrange, fontWeight: 600, marginTop: 4, opacity: 0.8 }}>{branchName}</div>
           </div>
-          <div onClick={logout} style={{ fontSize: 11, color: COLORS.gray, cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '5px 12px', borderRadius: 8 }}>Çıkış</div>
+          <div onClick={logout} style={{ fontSize: 12, color: COLORS.gray, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', padding: '6px 14px', borderRadius: 50 }}>Çıkış</div>
         </div>
       </div>
 
       {/* İstatistik */}
-      <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
-        {[[tStamp, 'Damga', COLORS.fioreOrange], [tFree, 'Ücretsiz', COLORS.green]].map(([v, l, ic, c]) => <div key={l} style={{ flex: 1, background: COLORS.fioreBeyaz, borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(3,3,3,0.06)' }}><div style={{ fontSize: 22, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 10, color: COLORS.grayDark, fontWeight: 600 }}>{l}</div></div>)}
+      <div style={{ display: 'flex', gap: 10, padding: '14px 20px' }}>
+        {[[tStamp, 'Damga', COLORS.fioreOrange], [tFree, 'Ücretsiz', COLORS.green]].map(([v, l, c]) => <div key={l} style={{ flex: 1, background: COLORS.fioreBeyaz, borderRadius: 22, padding: '16px', textAlign: 'center', boxShadow: '0 4px 20px rgba(44,30,20,0.04)' }}><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 4 }}>{l}</div></div>)}
       </div>
 
       {/* GPS */}
-      <div style={{ padding: '0 16px 10px' }}>
-        <div onClick={checkGPS} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: gpsChecking ? COLORS.warmGray : gps ? COLORS.greenBg : 'rgba(239,68,68,0.06)', border: `1.5px solid ${gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red}`, cursor: 'pointer' }}>
-          <span style={{ fontSize: 16 }}><div style={{ width: 8, height: 8, borderRadius: '50%', background: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }} /></span>
+      <div style={{ padding: '0 20px 10px' }}>
+        <div onClick={checkGPS} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 16, background: gpsChecking ? COLORS.warmGray : gps ? COLORS.greenBg : 'rgba(217,68,68,0.04)', border: `1.5px solid ${gpsChecking ? COLORS.grayLight : gps ? COLORS.green : COLORS.red}20`, cursor: 'pointer' }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }} />
           <div><div style={{ fontSize: 12, fontWeight: 700, color: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }}>{gpsChecking ? 'Konum kontrol ediliyor...' : gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gpsChecking ? '' : gpsDistance !== null ? `${branchName} · ${gpsDistance}m` : gps ? `${branchName} · Koordinat henüz kaydedilmemiş` : 'İşlem yapılamaz'}</div></div>
           <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>Yenile</span>
         </div>

@@ -134,25 +134,25 @@ export default function AdminPanel() {
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       {toast && <div style={{ position: 'fixed', top: 40, left: '50%', transform: 'translateX(-50%)', background: COLORS.green, color: COLORS.fioreBeyaz, padding: '12px 24px', borderRadius: 14, fontWeight: 700, fontSize: 14, zIndex: 999, boxShadow: '0 4px 20px rgba(0,0,0,0.25)', maxWidth: 340, textAlign: 'center' }}>{toast}</div>}
 
-      <div style={{ background: 'linear-gradient(180deg, #3D2B1F, #2A1810)', padding: '16px 20px 14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24 }} /></div>
+      <div style={{ background: 'linear-gradient(170deg, #3D2B1F, #261810)', padding: '20px 24px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24, opacity: 0.95 }} /></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div><div style={{ fontSize: 10, color: COLORS.fioreOrange, fontWeight: 800, letterSpacing: 2 }}>ADMİN PANELİ</div><div style={{ fontSize: 18, fontWeight: 800, color: COLORS.fioreBeyaz, marginTop: 2 }}>Merhaba Mikail</div></div>
-          <div onClick={logout} style={{ fontSize: 11, color: COLORS.gray, cursor: 'pointer', background: 'rgba(255,255,255,0.1)', padding: '5px 12px', borderRadius: 8 }}>Çıkış</div>
+          <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: 3 }}>ADMİN PANELİ</div><div style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 4 }}>Merhaba Mikail</div></div>
+          <div onClick={logout} style={{ fontSize: 12, color: COLORS.gray, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', padding: '6px 14px', borderRadius: 50 }}>Çıkış</div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 3, padding: '10px 12px', background: COLORS.fioreBeyaz, borderBottom: `2px solid ${COLORS.grayLight}`, overflowX: 'auto' }}>
-        {tabs.map(t => <div key={t.id} onClick={() => setTab(t.id)} style={{ padding: '7px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t.id ? COLORS.fioreSiyah : COLORS.warmGray, color: tab === t.id ? COLORS.fioreBeyaz : COLORS.grayDark }}>{t.label}</div>)}
+      <div style={{ display: 'flex', gap: 4, padding: '12px 16px', background: COLORS.fioreBeyaz, borderBottom: `1px solid ${COLORS.grayLight}`, overflowX: 'auto' }}>
+        {tabs.map(t => <div key={t.id} onClick={() => setTab(t.id)} style={{ padding: '8px 14px', borderRadius: 50, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t.id ? COLORS.fioreSiyah : 'transparent', color: tab === t.id ? COLORS.fioreBeyaz : COLORS.gray }}>{t.label}</div>)}
       </div>
 
       {/* ===== DASHBOARD ===== */}
       {tab === 'dash' && <div style={{ padding: '14px 16px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-          {[['Üye', customers.length, '', COLORS.orangeGlow, COLORS.fioreOrange], ['Damga', stampLogs.filter(l => l.type === 'stamp').length, '', COLORS.blueBg, COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type !== 'stamp' && l.type !== 'admin_add' && l.type !== 'admin_remove').length, '', COLORS.greenBg, COLORS.green], ['GOAT', goatCount, '', COLORS.goldBg, COLORS.gold]].map(([l, v, ic, bg, c]) => <C key={l}><div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, marginBottom: 6 }}>{ic}</div><div style={{ fontSize: 24, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.grayDark, fontWeight: 600 }}>{l}</div></C>)}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          {[['Üye', customers.length, COLORS.fioreOrange], ['Damga', stampLogs.filter(l => l.type === 'stamp').length, COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type !== 'stamp' && l.type !== 'admin_add' && l.type !== 'admin_remove').length, COLORS.green], ['GOAT', goatCount, COLORS.gold]].map(([l, v, c]) => <C key={l}><div style={{ width: 8, height: 8, borderRadius: '50%', background: c, marginBottom: 10 }} /><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 2 }}>{l}</div></C>)}
         </div>
-        <C><div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>En İyiler</div>
-          {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${COLORS.grayLight}` : 'none' }}><span style={{ fontSize: 16 }}>''</span><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 700 }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
+        <C><div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>En İyiler</div>
+          {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}><div style={{ width: 28, height: 28, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange }}>{c.name?.charAt(0)}</div><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600 }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
         </C>
         {/* Admin Ayarları */}
         <C style={{ marginTop: 14 }}>

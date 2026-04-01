@@ -213,13 +213,13 @@ export default function CustomerLogin() {
 
         <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: COLORS.gray, cursor: 'pointer' }}>← Ana Sayfa</div>
 
-        <div style={{ marginTop: 32, padding: '16px', background: COLORS.cream, borderRadius: 14 }}>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            {[['🐐', '7\'de 1', 'Ücretsiz'], ['🏆', 'GOAT', 'Ayrıcalık'], ['🎁', 'Özel', 'Kampanya']].map(([ic, t1, t2]) => (
+        <div style={{ marginTop: 32, padding: '20px', background: COLORS.cream, borderRadius: 22 }}>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+            {[['7', "7'de 1", 'Ücretsiz', COLORS.fioreOrange], ['G', 'GOAT', 'Ayrıcalık', COLORS.gold], ['%', 'Özel', 'Kampanya', COLORS.green]].map(([ic, t1, t2, c]) => (
               <div key={t1} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 28 }}>{ic}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.fioreSiyah, marginTop: 4 }}>{t1}</div>
-                <div style={{ fontSize: 10, color: COLORS.grayDark }}>{t2}</div>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${c}10`, border: `1.5px solid ${c}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', fontSize: 16, fontWeight: 800, color: c }}>{ic}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.fioreSiyah }}>{t1}</div>
+                <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 2 }}>{t2}</div>
               </div>
             ))}
           </div>

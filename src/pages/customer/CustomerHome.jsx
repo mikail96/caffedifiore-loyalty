@@ -104,8 +104,8 @@ export default function CustomerHome() {
                 <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark }}>{stamps} damga</span>
               </div>
               {[
-                ['Her ay 1 kahve ücretsiz', COLORS.gold],
-                ['Her alışverişte %10 indirim', COLORS.gold],
+                ['Her ay dilediğin bir kahve ücretsiz', COLORS.gold],
+                ['Tüm alışverişlerde %10 indirim', COLORS.gold],
                 ["7'de 1 ücretsiz devam eder", COLORS.fioreOrange],
                 ['Özel kampanyalara erken erişim', COLORS.fioreOrange],
               ].map(([tx, c], i) => (

@@ -70,9 +70,10 @@ export default function CustomerProfile() {
             'Damgalar arası minimum 15 dakika bekleme süresi vardır.',
             'Kahve, blend, kokteyl ve sıcak çikolata damga kazandırır.',
             'Çay, soğuk içecek, kutulu ürünler ve tatlılar damga kazandırmaz.',
-            '7 damga = 1 ücretsiz kahve.',
-            'Misafir: 0–15  |  Müdavim: 16–39  |  GOAT: 40+',
-            'GOAT: Aylık 1 ücretsiz + %10 indirim.',
+            '7 damga tamamlandığında 1 ücretsiz kahve hakkı kazanılır.',
+            'Misafir: 0–15 damga  |  Müdavim: 16–39 damga  |  GOAT: 40+ damga',
+            'GOAT üyelere her ay dilediği bir kahve ücretsiz verilir.',
+            'GOAT üyeler tüm alışverişlerinde %10 indirim hakkına sahiptir.',
             ...(isGoat ? ['Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz.'] : []),
           ].map((rule, i) => (
             <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}>
