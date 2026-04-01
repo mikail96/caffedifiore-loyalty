@@ -40,16 +40,18 @@ export default function CustomerLogin() {
     if (clean.length < 10) { setError('Geçerli bir telefon numarası girin'); return; }
     if (password.length < 4) { setError('Şifrenizi girin'); return; }
     setLoading(true); setError('');
+    let customerEmail = null;
     try {
-      const customerEmail = await findEmailByPhone(phone);
+      customerEmail = await findEmailByPhone(phone);
       if (!customerEmail) { setError('Bu numarayla hesap bulunamadı. Kayıt olun.'); setLoading(false); return; }
       console.log('Login attempt:', { phone: phone, email: customerEmail });
       await signInWithEmailAndPassword(auth, customerEmail, password);
       await refreshUser();
       navigate('/musteri');
     } catch (err) {
+      console.log('Login error:', err.code, err.message);
       if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError(`Şifre yanlış. (${customerEmail?.slice(0,3)}***) Tekrar deneyin.`);
+        setError('Şifre hatalı. Tekrar deneyin.');
       } else if (err.code === 'auth/too-many-requests') {
         setError('Çok fazla deneme. Biraz bekleyin.');
       } else {
@@ -128,7 +130,7 @@ export default function CustomerLogin() {
       const customerEmail = await findEmailByPhone(phone);
       if (!customerEmail) { setError('Bu numarayla hesap bulunamadı.'); setLoading(false); return; }
       await sendPasswordResetEmail(auth, customerEmail);
-      setSuccess(`Şifre sıfırlama bağlantısı ${customerEmail.replace(/(.{3})(.*)(@.*)/, '$1***$3')} adresine gönderildi!`);
+      setSuccess(`Şifre sıfırlama bağlantısı ${customerEmail.replace(/(.{3})(.*)(@.*)/, '$1***$3')} adresine gönderildi! İstenmeyen (spam) kutunuzu kontrol etmeyi unutmayın.`);
     } catch (err) {
       setError('Şifre sıfırlama gönderilemedi. Tekrar deneyin.');
     }
