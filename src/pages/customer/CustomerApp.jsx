@@ -74,7 +74,7 @@ export default function CustomerApp() {
     }
   };
 
-  const noScroll = activeTab === 'home' || activeTab === 'invite';
+  const noScroll = activeTab === 'invite';
 
   // Body scroll kilidi
   useEffect(() => {
