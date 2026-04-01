@@ -21,10 +21,22 @@ const tabs = [
 
 export default function CustomerApp() {
   const [activeTab, setActiveTab] = useState('home');
-  const { logout, userData, user } = useAuth();
+  const { logout, userData, user, sessionKicked, setSessionKicked } = useAuth();
   const isGoat = userData?.level === 'goat';
   const [notifBanner, setNotifBanner] = useState(null);
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
+
+  // Başka cihazdan giriş yapıldıysa
+  if (sessionKicked) {
+    return (
+      <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: FONTS.body, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={COLORS.fioreOrange} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 16 }}>Oturum Sonlandırıldı</div>
+        <div style={{ fontSize: 13, color: COLORS.grayDark, marginTop: 8, lineHeight: 1.6 }}>Hesabınıza başka bir cihazdan giriş yapıldı. Aynı anda tek cihazda oturum açılabilir.</div>
+        <div onClick={() => { setSessionKicked(false); window.location.href = '/'; }} style={{ marginTop: 24, background: COLORS.fioreOrange, color: '#fff', padding: '14px 32px', borderRadius: 50, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Tekrar Giriş Yap</div>
+      </div>
+    );
+  }
 
   // Bildirim izni ve token kayıt
   useEffect(() => {
@@ -64,6 +76,20 @@ export default function CustomerApp() {
   };
 
   const noScroll = activeTab === 'home' || activeTab === 'invite';
+
+  // Body scroll kilidi
+  useEffect(() => {
+    if (noScroll) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    }
+    return () => { document.body.style.overflow = ''; document.body.style.position = ''; document.body.style.width = ''; };
+  }, [noScroll]);
 
   return (
     <div style={{ height: noScroll ? '100vh' : 'auto', minHeight: noScroll ? undefined : '100vh', overflow: noScroll ? 'hidden' : 'auto', paddingBottom: noScroll ? 0 : 60, position: 'relative' }}>

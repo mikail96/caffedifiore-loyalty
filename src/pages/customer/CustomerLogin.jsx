@@ -46,6 +46,10 @@ export default function CustomerLogin() {
       if (!customerEmail) { setError('Bu numarayla hesap bulunamadı. Kayıt olun.'); setLoading(false); return; }
       console.log('Login attempt:', { phone: phone, email: customerEmail });
       await signInWithEmailAndPassword(auth, customerEmail, password);
+      // Tek oturum: sessionId oluştur
+      const sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      await updateDoc(doc(db, 'customers', auth.currentUser.uid), { sessionId: sid });
+      sessionStorage.setItem('cdf_session', sid);
       await refreshUser();
       navigate('/musteri');
     } catch (err) {
@@ -89,6 +93,7 @@ export default function CustomerLogin() {
         }
       }
 
+      const sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
       await setDoc(doc(db, 'customers', uid), {
         name: name.trim(),
         phone: phoneFormatted,
@@ -102,8 +107,10 @@ export default function CustomerLogin() {
         referredBy: referredByUid,
         referralCount: 0,
         qrSecret: Math.random().toString(36).slice(2, 15),
+        sessionId: sid,
         createdAt: serverTimestamp(),
       });
+      sessionStorage.setItem('cdf_session', sid);
 
       await refreshUser();
       navigate('/musteri');

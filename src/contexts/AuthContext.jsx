@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from '../config/firebase.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
 
@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionKicked, setSessionKicked] = useState(false);
 
   const loadCustomerData = async (uid) => {
     const customerDoc = await getDoc(doc(db, 'customers', uid));
@@ -26,6 +27,21 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         setUser(firebaseUser);
         await loadCustomerData(firebaseUser.uid);
+
+        // Tek oturum dinleyici
+        const unsub = onSnapshot(doc(db, 'customers', firebaseUser.uid), (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            setUserData(data);
+            const localSession = sessionStorage.getItem('cdf_session');
+            if (localSession && data.sessionId && data.sessionId !== localSession) {
+              // Başka cihaz giriş yaptı
+              setSessionKicked(true);
+              signOut(auth);
+            }
+          }
+        });
+        return () => unsub();
       } else {
         setUser(null);
         setUserData(null);
@@ -36,32 +52,23 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  // Kayit sonrasi veya veri degisikliginde cagir
   const refreshUser = async () => {
     if (auth.currentUser) {
       await loadCustomerData(auth.currentUser.uid);
     }
   };
 
-  const loginAsStaff = async (staffData) => {
-    setUserData(staffData);
-    setRole('staff');
-  };
-
-  const loginAsAdmin = async (adminData) => {
-    setUserData(adminData);
-    setRole('admin');
-  };
+  const loginAsStaff = async (staffData) => { setUserData(staffData); setRole('staff'); };
+  const loginAsAdmin = async (adminData) => { setUserData(adminData); setRole('admin'); };
 
   const logout = async () => {
     try { await signOut(auth); } catch (e) {}
-    setUser(null);
-    setUserData(null);
-    setRole(null);
+    sessionStorage.removeItem('cdf_session');
+    setUser(null); setUserData(null); setRole(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, role, loading, loginAsStaff, loginAsAdmin, logout, refreshUser, setUserData }}>
+    <AuthContext.Provider value={{ user, userData, role, loading, loginAsStaff, loginAsAdmin, logout, refreshUser, setUserData, sessionKicked, setSessionKicked }}>
       {children}
     </AuthContext.Provider>
   );
