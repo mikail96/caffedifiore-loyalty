@@ -10,6 +10,11 @@ style.textContent = `
   button, a, div { -webkit-tap-highlight-color: transparent; outline: none; }
   ::-webkit-scrollbar { width: 0; height: 0; }
   ::selection { background: rgba(236,103,26,0.2); }
+  input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #1E1A17 inset !important;
+    -webkit-text-fill-color: #F5F0EB !important;
+    caret-color: #F5F0EB;
+  }
   input:focus, textarea:focus { outline: none; }
 `;
 document.head.appendChild(style);

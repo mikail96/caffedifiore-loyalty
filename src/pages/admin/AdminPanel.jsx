@@ -10,10 +10,10 @@ const f = FONTS;
 const C = ({ children, style = {}, border }) => <div style={{ background: COLORS.cardBg, borderRadius: 22, padding: 18, border: border || `1px solid ${COLORS.divider}`, fontFamily: f.body, ...style }}>{children}</div>;
 const B = ({ text, color = COLORS.fioreOrange }) => <span style={{ fontSize: 10, fontWeight: 700, color: COLORS.fioreBeyaz, background: color, padding: '4px 12px', borderRadius: 20, fontFamily: f.body }}>{text}</span>;
 const Bt = ({ children, color = COLORS.fioreOrange, onClick, sm, disabled }) => <div onClick={disabled ? undefined : onClick} style={{ background: disabled ? COLORS.grayLight : color, color: disabled ? COLORS.gray : COLORS.fioreBeyaz, borderRadius: sm ? 12 : 50, padding: sm ? '8px 14px' : '14px', textAlign: 'center', fontWeight: 700, fontSize: sm ? 12 : 14, cursor: disabled ? 'not-allowed' : 'pointer', width: '100%', opacity: disabled ? 0.4 : 1, fontFamily: f.body }}>{children}</div>;
-const Inp = ({ label, value, onChange, placeholder, type = 'text' }) => <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 5, fontFamily: f.body }}>{label}</div><input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 14, border: `1.5px solid ${COLORS.grayLight}`, fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: f.body, color: COLORS.fioreBeyaz }} /></div>;
+const Inp = ({ label, value, onChange, placeholder, type = 'text' }) => <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 5, fontFamily: f.body }}>{label}</div><input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: 14, border: `1px solid ${COLORS.divider}`, fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: f.body, color: COLORS.fioreBeyaz, background: COLORS.warmGray }} /></div>;
 
 const tabs = [
-  { id: 'dash', label: 'Ana' },
+  { id: 'dash', label: 'Dashboard' },
   { id: 'cust', label: 'Müşteri' },
   { id: 'staff', label: 'Personel' },
   { id: 'branch', label: 'Şube' },
@@ -138,7 +138,7 @@ export default function AdminPanel() {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-header.png" alt="" style={{ height: 24, opacity: 0.95 }} /></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: 3 }}>ADMİN PANELİ</div><div style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 4 }}>Merhaba Mikail</div></div>
-          <div onClick={logout} style={{ fontSize: 12, color: COLORS.gray, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', padding: '6px 14px', borderRadius: 50 }}>Çıkış</div>
+          <div onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: COLORS.fioreOrange, cursor: 'pointer', background: COLORS.orangeGlow, padding: '6px 14px', borderRadius: 50, fontWeight: 600, border: '1px solid rgba(236,103,26,0.15)' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Çıkış</div>
         </div>
       </div>
 

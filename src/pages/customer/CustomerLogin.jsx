@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../../config/firebase.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, increment } from 'firebase/firestore';
@@ -10,8 +10,9 @@ const inputStyle = { width: '100%', padding: '14px', borderRadius: 12, border: `
 
 export default function CustomerLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { refreshUser } = useAuth();
-  const [mode, setMode] = useState('login'); // login | register | forgot
+  const [mode, setMode] = useState(location.state?.mode || 'login'); // login | register | forgot
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -135,7 +136,7 @@ export default function CustomerLogin() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.cream }}>
+    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: FONTS.body }}>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 20px 10px' }}>
         <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 40 }} />
       </div>

@@ -22,7 +22,7 @@ export default function LandingPage() {
           fontWeight: 700, fontSize: 16, color: '#fff', cursor: 'pointer', marginBottom: 12,
           boxShadow: '0 4px 24px rgba(236,103,26,0.3)',
         }}>Giriş Yap</div>
-        <div onClick={() => navigate('/musteri/giris')} style={{
+        <div onClick={() => navigate('/musteri/giris', { state: { mode: 'register' } })} style={{
           background: 'rgba(255,255,255,0.06)', borderRadius: 50, padding: '17px', textAlign: 'center',
           fontWeight: 700, fontSize: 16, color: COLORS.fioreBeyaz, cursor: 'pointer',
           border: '1px solid rgba(255,255,255,0.08)',

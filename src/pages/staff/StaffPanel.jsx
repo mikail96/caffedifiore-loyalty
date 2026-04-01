@@ -225,7 +225,7 @@ export default function StaffPanel() {
             <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 4 }}>{userData?.name}</div>
             <div style={{ fontSize: 12, color: COLORS.fioreOrange, fontWeight: 600, marginTop: 4, opacity: 0.8 }}>{branchName}</div>
           </div>
-          <div onClick={logout} style={{ fontSize: 12, color: COLORS.gray, cursor: 'pointer', background: 'rgba(255,255,255,0.08)', padding: '6px 14px', borderRadius: 50 }}>Çıkış</div>
+          <div onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: COLORS.fioreOrange, cursor: 'pointer', background: COLORS.orangeGlow, padding: '6px 14px', borderRadius: 50, fontWeight: 600, border: '1px solid rgba(236,103,26,0.15)' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Çıkış</div>
         </div>
       </div>
 
