@@ -151,13 +151,13 @@ export default function AdminPanel() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
           {[['Üye', customers.length, COLORS.fioreOrange], ['Damga', stampLogs.filter(l => l.type === 'stamp').length, COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type !== 'stamp' && l.type !== 'admin_add' && l.type !== 'admin_remove').length, COLORS.green], ['GOAT', goatCount, COLORS.gold]].map(([l, v, c]) => <C key={l}><div style={{ width: 8, height: 8, borderRadius: '50%', background: c, marginBottom: 10 }} /><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 2 }}>{l}</div></C>)}
         </div>
-        <C><div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>En İyiler</div>
+        <C><div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>En İyiler</div>
           {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}><div style={{ width: 28, height: 28, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange }}>{c.name?.charAt(0)}</div><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600 }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
         </C>
         {/* Admin Ayarları */}
         <C style={{ marginTop: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: adminEdit ? 12 : 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>Admin Ayarları</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>Admin Ayarları</div>
             {!adminEdit && <div onClick={async () => { const snap = await getDocs(collection(db, 'settings')); const ad = snap.docs.find(d => d.id === 'admin'); if (ad) { const d = ad.data(); setAdminForm({ username: d.username || '', password: d.password || '', phone: d.phone || '' }); setAdminEdit(true); } }} style={{ fontSize: 12, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 12px', borderRadius: 8 }}>Düzenle</div>}
           </div>
           {adminEdit && <div>
@@ -174,26 +174,40 @@ export default function AdminPanel() {
 
       {/* ===== MÜŞTERİLER ===== */}
       {tab === 'cust' && <div style={{ padding: '14px 16px' }}>
-        <div style={{ background: COLORS.cardBg, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, border: `1.5px solid ${COLORS.grayLight}`, marginBottom: 10 }}>
-          <span>🔍</span><input placeholder="İsim veya telefon ara..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: 13, flex: 1, background: 'transparent' }} />
+        <div style={{ background: COLORS.cardBg, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${COLORS.divider}`, marginBottom: 10 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.gray} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input placeholder="İsim veya telefon ara..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: 'none', outline: 'none', fontSize: 13, flex: 1, background: 'transparent', color: COLORS.fioreBeyaz }} />
         </div>
         {filtered.map(c => <C key={c.id} style={{ marginBottom: 8, padding: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: editingCust === c.id ? 10 : 0 }}>
             <div style={{ width: 38, height: 38, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange, border: `2px solid ${c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange}30` }}>{c.name?.charAt(0)}</div>
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ fontSize: 14, fontWeight: 700 }}>{c.name}</span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ fontSize: 14, fontWeight: 600, color: COLORS.fioreBeyaz }}>{c.name}</span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div>
               <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 2 }}>Kart: {c.currentCard || 0}/7 · Toplam: {c.totalStamps || 0}</div>
             </div>
             <div onClick={() => setEditingCust(editingCust === c.id ? null : c.id)} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 10px', borderRadius: 8 }}>{editingCust === c.id ? '✕' : '✎'}</div>
           </div>
-          {editingCust === c.id && <div style={{ paddingTop: 10, borderTop: `1px solid ${COLORS.grayLight}` }}>
-            <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Manuel Damga Düzenleme</div>
+          {editingCust === c.id && <div style={{ paddingTop: 10, borderTop: `1px solid ${COLORS.divider}` }}>
+            {/* Müşteri Detayları */}
+            <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 8 }}>Müşteri Bilgileri</div>
+            <div style={{ background: COLORS.warmGray, borderRadius: 12, padding: '10px 14px', marginBottom: 10 }}>
+              {[['Telefon', c.phone || '—'], ['E-posta', c.email || '—'], ['Referans Kodu', c.referralCode || '—'], ['Kayıt', c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString('tr-TR') : '—']].map(([l, v], i) => (
+                <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderTop: i ? `1px solid ${COLORS.divider}` : 'none' }}>
+                  <span style={{ fontSize: 11, color: COLORS.gray }}>{l}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.fioreBeyaz }}>{v}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 8 }}>Damga Düzenleme</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-              <div style={{ flex: 1 }}><Bt onClick={() => adjustStamp(c.id, 1)} color={COLORS.green} sm disabled={(c.currentCard || 0) >= 7}>+ Damga Ekle</Bt></div>
-              <div style={{ flex: 1 }}><Bt onClick={() => adjustStamp(c.id, -1)} color={COLORS.red} sm disabled={(c.currentCard || 0) <= 0 || (c.totalStamps || 0) <= 0}>− Damga Çıkar</Bt></div>
+              <div style={{ flex: 1 }}><Bt onClick={() => adjustStamp(c.id, 1)} color={COLORS.green} sm disabled={(c.currentCard || 0) >= 7}>+ Damga</Bt></div>
+              <div style={{ flex: 1 }}><Bt onClick={() => adjustStamp(c.id, -1)} color={COLORS.red} sm disabled={(c.currentCard || 0) <= 0 || (c.totalStamps || 0) <= 0}>− Damga</Bt></div>
             </div>
             <Bt onClick={() => { resetCard(c.id); setEditingCust(null); }} color={COLORS.gray} sm>Kartı Sıfırla (0/7)</Bt>
             {c.level === 'goat' && <div style={{ marginTop: 6 }}><Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>GOAT Aylık Sıfırla</Bt></div>}
+            <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.divider}`, paddingTop: 10 }}>
+              <Bt onClick={async () => { if (!confirm(`${c.name} silinsin mi? Bu işlem geri alınamaz!`)) return; await deleteDoc(doc(db, 'customers', c.id)); setCustomers(p => p.filter(x => x.id !== c.id)); setEditingCust(null); msg(`${c.name} silindi`); }} color={COLORS.red} sm>Müşteriyi Sil</Bt>
+            </div>
           </div>}
         </C>)}
       </div>}
@@ -239,13 +253,13 @@ export default function AdminPanel() {
               </div>
             </div> : <>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div><div style={{ fontSize: 14, fontWeight: 700 }}>{st.name}</div><div style={{ fontSize: 12, color: COLORS.blue }}>@{st.username} · {st.role}</div></div>
+                <div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>{st.name}</div><div style={{ fontSize: 12, color: COLORS.blue }}>@{st.username} · {st.role}</div></div>
                 <B text={st.status === 'active' ? 'Aktif' : 'Pasif'} color={st.status === 'active' ? COLORS.green : COLORS.gray} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: `1px solid ${COLORS.grayLight}` }}>
-                <div style={{ fontSize: 12 }}>PIN: <span style={{ fontWeight: 800, background: COLORS.warmGray, padding: '3px 10px', borderRadius: 6, letterSpacing: 3 }}>{st.pin}</span></div>
+                <div style={{ fontSize: 12, color: COLORS.grayDark }}>PIN: <span style={{ fontWeight: 700, background: COLORS.warmGray, color: COLORS.fioreBeyaz, padding: '3px 10px', borderRadius: 6, letterSpacing: 3 }}>{st.pin}</span></div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <span onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: st.pin, role: st.role, branch: st.branch }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✏️</span>
+                  <span onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: st.pin, role: st.role, branch: st.branch }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✎</span>
                   <span onClick={async () => {
                     const newStatus = st.status === 'active' ? 'inactive' : 'active';
                     await updateDoc(doc(db, 'staff', st.id), { status: newStatus });
@@ -282,7 +296,7 @@ export default function AdminPanel() {
           const hasCoords = br.lat && br.lng;
           return <C key={bid} style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div><div style={{ fontSize: 15, fontWeight: 800 }}>{br.name || br.shortName}</div>
+              <div><div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz }}>{br.name || br.shortName}</div>
                 <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 3 }}>{brStaff.length} personel: {brStaff.map(s => s.name).join(', ') || '-'}</div></div>
               <B text={hasCoords ? 'GPS aktif' : 'GPS yok'} color={hasCoords ? COLORS.green : COLORS.red} />
             </div>
@@ -333,11 +347,11 @@ export default function AdminPanel() {
         {/* Bardak boyutları */}
         <C style={{ marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editingSizes ? 12 : 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>Bardak Boyutları</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>Bardak Boyutları</div>
             {!editingSizes ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 12, color: COLORS.grayDark }}>Sıcak: {sizes.hotSmall}/{sizes.hotLarge} · Soğuk: {sizes.coldSize}</span>
-                <span onClick={() => { setEditingSizes(true); setSizesForm({ ...sizes }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✏️</span>
+                <span onClick={() => { setEditingSizes(true); setSizesForm({ ...sizes }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✎</span>
               </div>
             ) : null}
           </div>
@@ -462,7 +476,7 @@ export default function AdminPanel() {
                       <span style={{ fontSize: 13, fontWeight: 800, color: COLORS.fioreOrange }}>
                         {item.price14oz ? `₺${item.price14oz}` : ''}{item.price14oz && item.price16oz ? ' / ' : ''}{item.price16oz ? `₺${item.price16oz}` : ''}
                       </span>
-                      <span onClick={() => { setEditingMenuItem(item.id); setMenuEditForm({ name: item.name, price14oz: String(item.price14oz || ''), price16oz: String(item.price16oz || '') }); }} style={{ fontSize: 11, color: COLORS.blue, cursor: 'pointer' }}>✏️</span>
+                      <span onClick={() => { setEditingMenuItem(item.id); setMenuEditForm({ name: item.name, price14oz: String(item.price14oz || ''), price16oz: String(item.price16oz || '') }); }} style={{ fontSize: 11, color: COLORS.blue, cursor: 'pointer' }}>✎</span>
                       <span onClick={async () => {
                         await updateDoc(doc(db, 'menuItems', item.id), { active: false });
                         setMenuItems(p => p.map(x => x.id === item.id ? { ...x, active: false } : x));

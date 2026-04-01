@@ -238,7 +238,7 @@ export default function StaffPanel() {
       <div style={{ padding: '0 20px 10px' }}>
         <div onClick={checkGPS} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 16, background: gpsChecking ? COLORS.warmGray : gps ? COLORS.greenBg : 'rgba(217,68,68,0.04)', border: `1.5px solid ${gpsChecking ? COLORS.grayLight : gps ? COLORS.green : COLORS.red}20`, cursor: 'pointer' }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }} />
-          <div><div style={{ fontSize: 12, fontWeight: 700, color: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }}>{gpsChecking ? 'Konum kontrol ediliyor...' : gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gpsChecking ? '' : gpsDistance !== null ? `${branchName} · ${gpsDistance}m` : gps ? `${branchName} · Koordinat henüz kaydedilmemiş` : 'İşlem yapılamaz'}</div></div>
+          <div><div style={{ fontSize: 12, fontWeight: 600, color: gpsChecking ? COLORS.gray : gps ? COLORS.green : COLORS.red }}>{gpsChecking ? 'Konum kontrol ediliyor...' : gps ? 'Şube alanında' : 'Şube dışında!'}</div><div style={{ fontSize: 10, color: COLORS.grayDark }}>{gpsChecking ? '' : gpsDistance !== null ? `${branchName} · ${gpsDistance}m` : gps ? `${branchName} · Koordinat henüz kaydedilmemiş` : 'İşlem yapılamaz'}</div></div>
           <span style={{ marginLeft: 'auto', fontSize: 10, color: COLORS.blue, fontWeight: 700 }}>Yenile</span>
         </div>
       </div>
@@ -258,7 +258,7 @@ export default function StaffPanel() {
       {!sel && (
         <div style={{ padding: '0 16px 16px' }}>
           <Card>
-            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12, textAlign: 'center' }}>Müşteri QR Kodunu Okut</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12, textAlign: 'center' }}>Müşteri QR Kodunu Okut</div>
 
             {/* Kamera görüntüsü */}
             <div id="qr-reader" style={{
@@ -302,8 +302,8 @@ export default function StaffPanel() {
       {/* Müşteri Bulundu */}
       {sel && <div style={{ padding: '0 16px 16px' }}>
         <Card border={`2px solid ${sel.level === 'goat' ? COLORS.gold : COLORS.green}`}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span style={{ fontSize: 13, fontWeight: 800, color: COLORS.green }}>Müşteri Bulundu</span>{sel.level === 'goat' && <Badge text="GOAT" color={COLORS.gold} />}</div>
-          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>{sel.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span style={{ fontSize: 13, fontWeight: 700, color: COLORS.green }}>Müşteri Bulundu</span>{sel.level === 'goat' && <Badge text="GOAT" color={COLORS.gold} />}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 6 }}>{sel.name}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><LvBadge level={sel.level} /><span style={{ fontSize: 12, color: COLORS.grayDark, fontWeight: 600 }}>· {sel.currentCard || 0}/7</span></div>
           <Stamps count={sel.currentCard || 0} />
 
@@ -313,20 +313,20 @@ export default function StaffPanel() {
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 4 }}><span style={{ color: COLORS.grayDark }}>%10 indirim:</span><span style={{ color: COLORS.gold, fontWeight: 700 }}>Aktif</span></div>
           </div>}
 
-          {!step && <><div style={{ marginTop: 14, fontSize: 14, fontWeight: 800, marginBottom: 10 }}>İşlem Seç:</div><div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {!step && <><div style={{ marginTop: 14, fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>İşlem Seç:</div><div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <Btn onClick={() => { if ((sel.currentCard || 0) >= 7) { msg('Kart dolu!', 'error'); return; } setStep('cat'); }} disabled={!gps || (sel.currentCard || 0) >= 7}>{'Damga Ekle' + (sel.level === 'goat' ? ' (%10 indirimli)' : '')}</Btn>
             {sel.level === 'goat' && <Btn onClick={doGoat} disabled={!gps || sel.goatMonthlyUsed} color={COLORS.gold}>GOAT Aylık Ücretsiz</Btn>}
             <Btn onClick={doFree} disabled={!gps || (sel.currentCard || 0) < 7} color={COLORS.green}>Sadakat Ücretsiz</Btn>
           </div></>}
 
-          {step === 'cat' && <><div style={{ marginTop: 14, fontSize: 14, fontWeight: 800, marginBottom: 10 }}>Müşteri ne aldı?</div>
+          {step === 'cat' && <><div style={{ marginTop: 14, fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>Müşteri ne aldı?</div>
             {STAMP_CATEGORIES.map(x => <div key={x.id} onClick={() => { if (!x.eligible) { msg(x.name + ' damga kazandırmaz!', 'error'); return; } setCat(x.id); setStep('ok'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 12, marginBottom: 5, cursor: 'pointer', background: x.eligible ? COLORS.fioreBeyaz : COLORS.warmGray, border: `1.5px solid ${x.eligible ? COLORS.green : COLORS.grayLight}`, opacity: x.eligible ? 1 : 0.5 }}><span style={{ fontSize: 18 }}>{x.icon}</span><div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: x.eligible ? COLORS.fioreSiyah : COLORS.gray }}>{x.name}</div><span style={{ fontSize: 14, color: x.eligible ? COLORS.green : COLORS.red, fontWeight: 800 }}>{x.eligible ? '✓' : '✗'}</span></div>)}
             <div onClick={() => setStep(null)} style={{ textAlign: 'center', marginTop: 10, fontSize: 13, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>← Geri</div>
           </>}
 
           {step === 'ok' && <div style={{ marginTop: 14, background: COLORS.orangeGlow, borderRadius: 14, padding: 16, border: `2px solid ${COLORS.fioreOrange}`, textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>Damga Onayı</div>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{sel.name}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8 }}>Damga Onayı</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz }}>{sel.name}</div>
             <div style={{ fontSize: 13, color: COLORS.grayDark, marginTop: 6 }}>{STAMP_CATEGORIES.find(c => c.id === cat)?.icon} {STAMP_CATEGORIES.find(c => c.id === cat)?.name}</div>
             <div style={{ fontSize: 13, color: COLORS.grayDark, marginTop: 4 }}>Kart: {sel.currentCard || 0}/7 → {(sel.currentCard || 0) + 1}/7</div>
             {sel.level === 'goat' && <div style={{ marginTop: 6 }}><Badge text="💰 %10 indirim uygula" color={COLORS.gold} /></div>}
@@ -340,7 +340,7 @@ export default function StaffPanel() {
 
       {/* Son İşlemler */}
       {logs.length > 0 && <div style={{ padding: '0 16px 20px' }}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Son İşlemler</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8 }}>Son İşlemler</div>
         {logs.slice(0, 5).map((l, i) => <div key={i} style={{ background: COLORS.fioreBeyaz, borderRadius: 12, padding: '10px 14px', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><div><span style={{ fontSize: 13, fontWeight: 700 }}>{l.cn}</span><span style={{ fontSize: 11, color: COLORS.gray, marginLeft: 8 }}>{l.time}</span></div><Badge text={l.type === 'stamp' ? 'DAMGA' : l.type === 'goat' ? 'GOAT' : 'ÜCRETSİZ'} color={l.type === 'stamp' ? COLORS.fioreOrange : l.type === 'goat' ? COLORS.gold : COLORS.green} /></div>)}
       </div>}
     </div>

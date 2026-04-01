@@ -42,12 +42,13 @@ export default function CustomerLogin() {
     try {
       const customerEmail = await findEmailByPhone(phone);
       if (!customerEmail) { setError('Bu numarayla hesap bulunamadı. Kayıt olun.'); setLoading(false); return; }
+      console.log('Login attempt:', { phone: phone, email: customerEmail });
       await signInWithEmailAndPassword(auth, customerEmail, password);
       await refreshUser();
       navigate('/musteri');
     } catch (err) {
       if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError('Şifre yanlış. Tekrar deneyin.');
+        setError(`Şifre yanlış. (${customerEmail?.slice(0,3)}***) Tekrar deneyin.`);
       } else if (err.code === 'auth/too-many-requests') {
         setError('Çok fazla deneme. Biraz bekleyin.');
       } else {
@@ -150,7 +151,7 @@ export default function CustomerLogin() {
 
         {/* Telefon — hep göster */}
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Telefon Numarası</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Telefon Numarası</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ padding: '14px 12px', background: COLORS.warmGray, borderRadius: 12, fontWeight: 700, fontSize: 14, color: COLORS.grayDark }}>+90</div>
             <input type="tel" placeholder="5XX XXX XX XX" value={phone} onChange={e => setPhone(e.target.value)} style={{ ...inputStyle, textAlign: 'center', letterSpacing: 1 }} maxLength={11} />
@@ -159,19 +160,19 @@ export default function CustomerLogin() {
 
         {/* İsim — kayıt */}
         {mode === 'register' && <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Ad Soyad</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Ad Soyad</div>
           <input placeholder="Adınız Soyadınız" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
         </div>}
 
         {/* Email — kayıt */}
         {mode === 'register' && <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>E-posta Adresi</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>E-posta Adresi</div>
           <input type="email" placeholder="ornek@gmail.com" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
         </div>}
 
         {/* Şifre — login ve register */}
         {mode !== 'forgot' && <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Şifre</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Şifre</div>
           <div style={{ position: 'relative' }}>
             <input type={showPass ? 'text' : 'password'} placeholder={mode === 'register' ? 'En az 6 karakter' : 'Şifreniz'} value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 44 }} />
             <span onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: 16 }}>{showPass ? '🙈' : '👁️'}</span>
@@ -181,11 +182,11 @@ export default function CustomerLogin() {
         {/* Doğum + referans — kayıt */}
         {mode === 'register' && <>
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Doğum Tarihi <span style={{ color: COLORS.gray, fontWeight: 400 }}>(opsiyonel)</span></div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Doğum Tarihi <span style={{ color: COLORS.gray, fontWeight: 400 }}>(opsiyonel)</span></div>
             <input type="date" value={birth} onChange={e => setBirth(e.target.value)} style={inputStyle} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Davet Kodu <span style={{ color: COLORS.gray, fontWeight: 400 }}>(opsiyonel)</span></div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Davet Kodu <span style={{ color: COLORS.gray, fontWeight: 400 }}>(opsiyonel)</span></div>
             <input placeholder="Arkadaşınızın kodu" value={refInput} onChange={e => setRefInput(e.target.value.toUpperCase())} style={{ ...inputStyle, letterSpacing: 2, textAlign: 'center' }} maxLength={10} />
           </div>
         </>}
@@ -213,16 +214,17 @@ export default function CustomerLogin() {
 
         <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: COLORS.gray, cursor: 'pointer' }}>← Ana Sayfa</div>
 
-        <div style={{ marginTop: 32, padding: '20px', background: COLORS.warmGray, borderRadius: 22 }}>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
-            {[['7', "7'de 1", 'Ücretsiz', COLORS.fioreOrange], ['G', 'GOAT', 'Ayrıcalık', COLORS.gold], ['%', 'Özel', 'Kampanya', COLORS.green]].map(([ic, t1, t2, c]) => (
-              <div key={t1} style={{ textAlign: 'center' }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${c}10`, border: `1.5px solid ${c}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', fontSize: 16, fontWeight: 800, color: c }}>{ic}</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.fioreBeyaz }}>{t1}</div>
-                <div style={{ fontSize: 10, color: COLORS.grayDark, marginTop: 2 }}>{t2}</div>
-              </div>
-            ))}
-          </div>
+        <div style={{ marginTop: 32, padding: '18px 16px', background: COLORS.warmGray, borderRadius: 22, border: `1px solid ${COLORS.divider}` }}>
+          {[
+            [COLORS.fioreOrange, '7 kahvede 1 ücretsiz'],
+            [COLORS.gold, 'GOAT üyelere özel ayrıcalıklar'],
+            [COLORS.green, 'Kampanya ve sürpriz fırsatlar'],
+          ].map(([c, t], i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: i > 0 ? '10px 0 0' : '0', borderTop: i > 0 ? `1px solid ${COLORS.divider}` : 'none', paddingTop: i > 0 ? 10 : 0 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: c, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: COLORS.fioreBeyaz, fontWeight: 500 }}>{t}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
