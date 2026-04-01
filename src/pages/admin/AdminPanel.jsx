@@ -109,7 +109,9 @@ export default function AdminPanel() {
     else if (newTotal < 16) nl = 'misafir';
     await updateDoc(doc(db, 'customers', custId), { currentCard: newCard, totalStamps: newTotal, level: nl });
     setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: newCard, totalStamps: newTotal, level: nl } : x));
-    await addDoc(collection(db, 'stampLogs'), { customerId: custId, customerName: c.name, staffId: 'admin', staffName: 'Admin', branchId: 'admin', type: delta > 0 ? 'admin_add' : 'admin_remove', cardAfter: newCard, timestamp: serverTimestamp() });
+    const logEntry = { customerId: custId, customerName: c.name, staffId: 'admin', staffName: 'Admin', branchId: 'admin', type: delta > 0 ? 'admin_add' : 'admin_remove', cardAfter: newCard, timestamp: { seconds: Date.now() / 1000 } };
+    await addDoc(collection(db, 'stampLogs'), { ...logEntry, timestamp: serverTimestamp() });
+    setStampLogs(p => [logEntry, ...p]);
 
     // Referans bonus: İlk damgada referans sahibine +1 damga
     if (delta > 0 && newTotal === 1 && c.referredBy) {

@@ -16,7 +16,7 @@ export default function CustomerInvite() {
   const handleShare = async () => { if (navigator.share) { try { await navigator.share({ title: 'CaffeDiFiore', text: `CaffeDiFiore'da damga topla, ücretsiz kahve kazan! Davet kodum: ${refCode}` }); } catch(e){} } else handleCopy(); };
 
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
+    <div style={{ height: '100vh', overflow: 'hidden', background: COLORS.cream, fontFamily: f.body }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 16px', borderBottom: `1px solid ${COLORS.divider}` }}>
         <div style={{ textAlign: 'center', fontSize: 10, letterSpacing: 4, color: COLORS.fioreOrange, fontWeight: 600, marginBottom: 8, opacity: 0.5 }}>CAFFEDIFIORE</div>
         <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.fioreBeyaz }}>Davet Et</div>
