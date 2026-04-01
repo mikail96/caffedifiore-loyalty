@@ -7,44 +7,47 @@ import { COLORS, FONTS, STAMP_CONFIG } from '../../config/constants.js';
 import { calculateLevel, stampsToNextLevel, generateQRToken } from '../../utils/helpers.js';
 
 const f = FONTS;
-
 const Card = ({ children, style = {} }) => (
-  <div style={{ background: COLORS.fioreBeyaz, borderRadius: 20, padding: '20px', boxShadow: '0 2px 20px rgba(42,24,16,0.06)', ...style }}>
-    {children}
-  </div>
+  <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}`, ...style }}>{children}</div>
 );
 
-const LevelBadge = ({ level }) => {
-  const cfg = {
-    misafir: { label: 'Fiore Misafir', color: COLORS.fioreOrange, bg: COLORS.orangeGlow, dot: COLORS.fioreOrange },
-    mudavim: { label: 'Fiore Müdavim', color: COLORS.fioreOrange, bg: COLORS.orangeGlow, dot: COLORS.orangeLight },
-    goat: { label: 'Fiore GOAT', color: COLORS.gold, bg: COLORS.goldBg, dot: COLORS.gold },
-  }[level];
+const Bean = ({ color = COLORS.fioreOrange }) => (
+  <svg width="12" height="12" viewBox="0 0 20 20"><ellipse cx="10" cy="10" rx="6" ry="9" fill={color} opacity="0.3" stroke={color} strokeWidth="1"/><path d="M10 2 Q7 10 10 18" stroke={color} strokeWidth="1.2" fill="none"/></svg>
+);
+
+const CupProgress = ({ count, total = 7, isGoat }) => {
+  const pct = count / total;
+  const r = 56, size = 150, cx = size/2, cy = size/2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - pct);
+  const done = count >= total;
+  const col = done ? COLORS.green : isGoat ? COLORS.gold : COLORS.fioreOrange;
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: cfg.bg, padding: '6px 16px', borderRadius: 24, border: `1.5px solid ${cfg.color}20` }}>
-      <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot }} />
-      <span style={{ fontSize: 12, color: cfg.color, fontWeight: 700, fontFamily: f.body, letterSpacing: 0.5 }}>{cfg.label}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block' }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={COLORS.warmGray} strokeWidth="5"/>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={col} strokeWidth="5" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} transform={`rotate(-90 ${cx} ${cy})`} style={{ transition: 'stroke-dashoffset 0.6s ease' }}/>
+        {Array.from({ length: total }, (_, i) => {
+          const a = (i/total)*2*Math.PI - Math.PI/2;
+          const px = cx+r*Math.cos(a), py = cy+r*Math.sin(a);
+          return (<g key={i}><circle cx={px} cy={py} r={8} fill={i<count?col:COLORS.cardBg} stroke={i<count?col:COLORS.warmGray} strokeWidth="1.5"/>{i<count?<path d={`M${px-2.5} ${py+0.5} L${px-0.5} ${py+2.5} L${px+3} ${py-2}`} stroke={COLORS.fioreSiyah} strokeWidth="1.8" fill="none" strokeLinecap="round"/>:<text x={px} y={py+3.5} textAnchor="middle" fontSize="8" fontWeight="600" fill={COLORS.gray} fontFamily={f.body}>{i+1}</text>}</g>);
+        })}
+        <g transform={`translate(${cx-13}, ${cy-17})`}>
+          <rect x="6" y="0" width="14" height="2.5" rx="1.2" fill={col} opacity="0.55"/>
+          <path d="M1 2.5 L25 2.5 L24 7 L2 7 Z" fill={col} opacity="0.45"/>
+          <ellipse cx="18" cy="4" rx="2.5" ry="1" fill={COLORS.cardBg} opacity="0.5"/>
+          <path d="M3 7 L5.5 33 Q6 34.5 8 34.5 L18 34.5 Q20 34.5 20.5 33 L23 7" fill="none" stroke={col} strokeWidth="1.6" strokeLinejoin="round"/>
+          <path d="M4.2 14 L21.8 14" stroke={col} strokeWidth="0.8" opacity="0.25"/>
+          <path d="M4.6 18 L21.4 18" stroke={col} strokeWidth="0.8" opacity="0.25"/>
+          <clipPath id="cupF"><path d="M3 7 L5.5 33 Q6 34.5 8 34.5 L18 34.5 Q20 34.5 20.5 33 L23 7 Z"/></clipPath>
+          <rect x="1" y={34.5-(pct*27.5)} width="26" height="36" fill={col} opacity="0.2" clipPath="url(#cupF)" style={{ transition: 'y 0.6s ease' }}/>
+        </g>
+      </svg>
+      <div style={{ marginTop: 6 }}><span style={{ fontSize: 26, fontWeight: 800, color: col }}>{count}</span><span style={{ fontSize: 15, fontWeight: 500, color: COLORS.gray }}> / {total}</span></div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: done ? COLORS.green : COLORS.grayDark, marginTop: 2 }}>{done ? 'Ücretsiz kahven hazır!' : `${total-count} kahve daha — 1 ücretsiz`}</div>
     </div>
   );
 };
-
-const StampDot = ({ filled, isFree, freeReady }) => (
-  <div style={{
-    width: 38, height: 38, borderRadius: '50%',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: filled ? COLORS.fioreOrange : isFree ? (freeReady ? COLORS.green : 'transparent') : 'transparent',
-    border: filled ? 'none' : isFree ? `2px dashed ${freeReady ? COLORS.green : COLORS.green}80` : `2px solid ${COLORS.grayLight}`,
-    transition: 'all 0.3s ease',
-  }}>
-    {filled ? (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    ) : isFree ? (
-      <span style={{ fontSize: 10, fontWeight: 800, color: freeReady ? '#fff' : COLORS.green, fontFamily: f.body }}>FREE</span>
-    ) : (
-      <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayLight, fontFamily: f.body }}>{}</span>
-    )}
-  </div>
-);
 
 export default function CustomerHome() {
   const { userData } = useAuth();
@@ -53,26 +56,17 @@ export default function CustomerHome() {
   const [campaigns, setCampaigns] = useState([]);
 
   useEffect(() => {
-    const genToken = () => {
-      const secret = userData?.qrSecret || 'default';
-      const uid = userData?.phone || 'unknown';
-      setQrToken(generateQRToken(uid, secret));
-    };
-    genToken();
-    const t = setInterval(() => {
-      setQrTimer(p => { if (p <= 1) { genToken(); return 60; } return p - 1; });
-    }, 1000);
+    const gen = () => { setQrToken(generateQRToken(userData?.phone || 'x', userData?.qrSecret || 'd')); };
+    gen();
+    const t = setInterval(() => { setQrTimer(p => { if (p<=1) { gen(); return 60; } return p-1; }); }, 1000);
     return () => clearInterval(t);
   }, [userData]);
 
   useEffect(() => {
-    getDocs(query(collection(db, 'campaigns'), where('active', '==', true)))
-      .then(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-      .catch(() => {});
+    getDocs(query(collection(db, 'campaigns'), where('active', '==', true))).then(s => setCampaigns(s.docs.map(d => ({ id: d.id, ...d.data() })))).catch(() => {});
   }, []);
 
   if (!userData) return null;
-
   const level = userData.level || calculateLevel(userData.totalStamps || 0);
   const isGoat = level === 'goat';
   const nextInfo = stampsToNextLevel(userData.totalStamps || 0);
@@ -81,151 +75,70 @@ export default function CustomerHome() {
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
-
-      {/* Header */}
-      <div style={{ background: isGoat ? 'linear-gradient(160deg, #3D2B1F 0%, #1a1208 100%)' : 'linear-gradient(160deg, #3D2B1F 0%, #2A1810 100%)', padding: '20px 24px 22px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-          <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 26, opacity: 0.95 }} />
+      <div style={{ background: COLORS.headerGradient, padding: '20px 20px 18px', borderBottom: `1px solid ${COLORS.divider}` }}>
+        <div style={{ textAlign: 'center', fontSize: 10, letterSpacing: 4, color: isGoat ? COLORS.gold : COLORS.fioreOrange, fontWeight: 600, marginBottom: 10, opacity: 0.5 }}>CAFFEDIFIORE</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 10, color: COLORS.gray, letterSpacing: 2, fontWeight: 600 }}>HOŞ GELDİN</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 3 }}>{userData.name}</div>
+          </div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: isGoat ? COLORS.goldBg : COLORS.orangeGlow, padding: '5px 12px', borderRadius: 20, border: `1px solid ${isGoat ? COLORS.gold : COLORS.fioreOrange}15` }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: isGoat ? COLORS.gold : COLORS.fioreOrange }} />
+            <span style={{ fontSize: 10, color: isGoat ? COLORS.gold : COLORS.fioreOrange, fontWeight: 600 }}>{isGoat ? 'GOAT' : level === 'mudavim' ? 'Müdavim' : 'Misafir'}</span>
+          </div>
         </div>
-        <div style={{ marginBottom: 4 }}>
-          <div style={{ fontSize: 11, color: isGoat ? COLORS.goldLight : 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', fontFamily: f.body }}>Hoş geldin</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 4, fontFamily: f.heading }}>{userData.name}</div>
-        </div>
-        <div style={{ marginTop: 12 }}><LevelBadge level={level} /></div>
       </div>
 
-      {/* İlerleme */}
-      <div style={{ padding: '16px 20px 0' }}>
-        <Card>
-          {isGoat ? (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
-                <span style={{ fontSize: 18, fontWeight: 700, color: COLORS.gold, fontFamily: f.heading }}>GOAT Üyelik</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark }}>{stamps} damga</span>
-              </div>
-              {[
-                ['Her ay dilediğin bir kahve ücretsiz', COLORS.gold],
-                ['Tüm alışverişlerde %10 indirim', COLORS.gold],
-                ["7'de 1 ücretsiz devam eder", COLORS.fioreOrange],
-                ['Özel kampanyalara erken erişim', COLORS.fioreOrange],
-              ].map(([tx, c], i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: c, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: COLORS.grayDark }}>{tx}</span>
-                </div>
-              ))}
-              <div style={{ background: COLORS.goldBg, borderRadius: 12, padding: '12px 14px', marginTop: 12, borderLeft: `3px solid ${COLORS.gold}` }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.goldDark }}>Ödeme öncesinde GOAT üyeliğinizi kasa personeline gösteriniz.</span>
-              </div>
+      <div style={{ padding: '14px 16px' }}>
+        <Card style={{ marginBottom: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Bean color={isGoat ? COLORS.gold : COLORS.fioreOrange} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{stamps} Damga</span>
             </div>
-          ) : (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-                <span style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreSiyah, fontFamily: f.heading }}>{stamps} Damga</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: nextInfo.next === 'goat' ? COLORS.gold : COLORS.fioreOrange }}>
-                  {nextInfo.next === 'goat' ? 'GOAT' : 'Müdavim'}'e {nextInfo.remaining} kaldı
-                </span>
-              </div>
-              <div style={{ height: 8, background: COLORS.warmGray, borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
-                <div style={{
-                  height: '100%',
-                  width: `${Math.min((stamps / (nextInfo.next === 'goat' ? 40 : 16)) * 100, 100)}%`,
-                  background: `linear-gradient(90deg, ${COLORS.fioreOrange}, ${COLORS.gold})`,
-                  borderRadius: 4,
-                  transition: 'width 0.5s ease',
-                }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                {[['Misafir', '0'], ['Müdavim', '16'], ['GOAT', '40']].map(([l, n]) => (
-                  <span key={l} style={{ fontSize: 10, fontWeight: 600, color: COLORS.gray }}>{l} ({n})</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
-
-      {/* GOAT Aylık */}
-      {isGoat && (
-        <div style={{ padding: '12px 20px 0' }}>
-          {userData.goatMonthlyUsed ? (
-            <div style={{ background: COLORS.warmGray, borderRadius: 16, padding: '14px 18px', borderLeft: `3px solid ${COLORS.gold}` }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark }}>Aylık ücretsiz kahven bu ay kullanıldı. Gelecek ay yenilenir.</span>
-            </div>
-          ) : (
-            <div style={{ background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.goldDark})`, borderRadius: 16, padding: '18px 20px', color: COLORS.fioreBeyaz }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2.5, opacity: 0.8, marginBottom: 6 }}>GOAT AYLIK HEDİYE</div>
-              <div style={{ fontSize: 17, fontWeight: 700, fontFamily: f.heading }}>1 Ücretsiz Kahve Hakkın Var</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Kampanyalar */}
-      {campaigns.map(camp => (
-        <div key={camp.id} style={{ padding: '12px 20px 0' }}>
-          <div style={{
-            background: `linear-gradient(135deg, ${COLORS.fioreOrange}, ${COLORS.orangeLight})`,
-            borderRadius: 16, padding: '16px 20px', color: COLORS.fioreBeyaz,
-            position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{ position: 'absolute', right: -20, top: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2.5, opacity: 0.8, marginBottom: 6 }}>KAMPANYA</div>
-            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: f.heading }}>{camp.title}</div>
-            {camp.description && <div style={{ fontSize: 12, marginTop: 6, opacity: 0.85, lineHeight: 1.5 }}>{camp.description}</div>}
+            {!isGoat && <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.fioreOrange }}>{nextInfo.next === 'goat' ? 'GOAT' : 'Müdavim'}'e {nextInfo.remaining} kaldı</span>}
+            {isGoat && <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.gold }}>GOAT Üye</span>}
           </div>
-        </div>
-      ))}
-
-      {/* Sadakat Kartı */}
-      <div style={{ padding: '16px 20px 0' }}>
-        <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: COLORS.fioreSiyah, fontFamily: f.heading }}>Sadakat Kartım</span>
-            <span style={{ fontSize: 14, color: COLORS.fioreOrange, fontWeight: 700 }}>{card} / 7</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {Array.from({ length: 7 }, (_, i) => (
-              <StampDot key={i} filled={i < card} />
-            ))}
-            <StampDot isFree freeReady={card >= 7} />
-          </div>
-          <div style={{ marginTop: 14, textAlign: 'center', fontSize: 13, fontWeight: 600, color: card >= 7 ? COLORS.green : COLORS.grayDark }}>
-            {card >= 7 ? 'Ücretsiz kahve hakkınız var!' : `${7 - card} kahve daha — 1 ücretsiz`}
+          <div style={{ height: 5, background: COLORS.warmGray, borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min((stamps/(nextInfo.next==='goat'?40:16))*100,100)}%`, background: `linear-gradient(90deg, ${isGoat?COLORS.gold:COLORS.fioreOrange}, ${isGoat?COLORS.goldDark:COLORS.orangeLight})`, borderRadius: 3, boxShadow: `0 0 8px ${isGoat?COLORS.gold:COLORS.fioreOrange}40`, transition: 'width 0.5s ease' }} />
           </div>
         </Card>
-      </div>
 
-      {/* QR Kod */}
-      <div style={{ padding: '16px 20px 20px' }}>
+        {isGoat && (
+          <div style={{ marginBottom: 10 }}>
+            {userData.goatMonthlyUsed ? (
+              <Card><span style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark }}>Aylık ücretsiz kahven bu ay kullanıldı. Gelecek ay yenilenir.</span></Card>
+            ) : (
+              <div style={{ background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.goldDark})`, borderRadius: 20, padding: '16px 18px', color: '#fff' }}>
+                <div style={{ fontSize: 9, letterSpacing: 2, fontWeight: 700, opacity: 0.7 }}>GOAT AYLIK HEDİYE</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4 }}>Dilediğin bir kahve ücretsiz</div>
+                <div style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>Tüm alışverişlerde %10 indirim</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {campaigns.map(c => (
+          <div key={c.id} style={{ background: `linear-gradient(135deg, ${COLORS.fioreOrange}, ${COLORS.orangeLight})`, borderRadius: 20, padding: '16px 18px', marginBottom: 10, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', right: -16, top: -16, width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+            <div style={{ fontSize: 9, letterSpacing: 2, fontWeight: 700, opacity: 0.7 }}>KAMPANYA</div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4 }}>{c.title}</div>
+            {c.description && <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>{c.description}</div>}
+          </div>
+        ))}
+
+        <Card style={{ marginBottom: 10, padding: '20px 16px 16px' }}>
+          <CupProgress count={card} total={7} isGoat={isGoat} />
+        </Card>
+
         <Card style={{ textAlign: 'center' }}>
-          {isGoat && (
-            <div style={{ background: COLORS.goldBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, borderLeft: `3px solid ${COLORS.gold}` }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.goldDark }}>Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz</span>
-            </div>
-          )}
-          <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreSiyah, marginBottom: 14, fontFamily: f.heading }}>Kasada QR Göster</div>
-          <div style={{
-            display: 'inline-block', padding: 10,
-            background: COLORS.fioreBeyaz, borderRadius: 16,
-            border: `3px solid ${isGoat ? COLORS.gold : COLORS.fioreOrange}20`,
-            boxShadow: `0 4px 24px ${isGoat ? COLORS.gold : COLORS.fioreOrange}15`,
-          }}>
-            <QRCodeSVG value={qrToken} size={130} level="M" fgColor={COLORS.fioreSiyah} bgColor={COLORS.fioreBeyaz} />
+          {isGoat && <div style={{ background: COLORS.goldBg, borderRadius: 10, padding: '8px 12px', marginBottom: 10, borderLeft: `3px solid ${COLORS.gold}` }}><span style={{ fontSize: 11, fontWeight: 600, color: COLORS.gold }}>Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz</span></div>}
+          <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>Kasada QR Göster</div>
+          <div style={{ display: 'inline-block', padding: 8, borderRadius: 14, background: '#fff' }}>
+            <QRCodeSVG value={qrToken} size={90} level="M" fgColor="#000" bgColor="#fff" />
           </div>
-          {isGoat && (
-            <div style={{ marginTop: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.fioreBeyaz, background: COLORS.gold, padding: '5px 14px', borderRadius: 20, letterSpacing: 0.5 }}>
-                GOAT · %10 İNDİRİM
-              </span>
-            </div>
-          )}
-          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${COLORS.grayLight}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: 4, height: 4, borderRadius: '50%', background: COLORS.gray }} />
-            </div>
-            <span style={{ fontSize: 12, color: COLORS.gray, fontWeight: 600 }}>{qrTimer}s sonra yenilenir</span>
-          </div>
+          {isGoat && <div style={{ marginTop: 8 }}><span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: COLORS.gold, padding: '4px 14px', borderRadius: 20 }}>GOAT · %10 İNDİRİM</span></div>}
+          <div style={{ marginTop: 8, fontSize: 10, color: COLORS.gray }}>{qrTimer}s sonra yenilenir</div>
         </Card>
       </div>
     </div>

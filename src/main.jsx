@@ -5,7 +5,7 @@ import App from './App.jsx';
 const style = document.createElement('style');
 style.textContent = `
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { background: #030303; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body { background: #0A0908; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   input, textarea, select { outline: none; -webkit-tap-highlight-color: transparent; }
   button, a, div { -webkit-tap-highlight-color: transparent; outline: none; }
   ::-webkit-scrollbar { width: 0; height: 0; }

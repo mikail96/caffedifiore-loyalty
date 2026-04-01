@@ -134,17 +134,17 @@ export default function CustomerLogin() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: COLORS.fioreSiyah }}>
+    <div style={{ minHeight: '100vh', background: COLORS.cream }}>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 20px 10px' }}>
         <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 40 }} />
       </div>
       <div style={{ textAlign: 'center', color: COLORS.fioreOrange, fontStyle: 'italic', fontSize: 13, fontWeight: 500, marginBottom: 20 }}>Sei Perfetto</div>
 
-      <div style={{ background: COLORS.fioreBeyaz, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 130px)', padding: '28px 24px' }}>
-        <div style={{ fontSize: 24, fontWeight: 700, fontFamily: FONTS.heading, color: COLORS.fioreSiyah, marginBottom: 4 }}>
+      <div style={{ background: COLORS.cardBg, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 130px)', padding: '28px 24px' }}>
+        <div style={{ fontSize: 24, fontWeight: 700, fontFamily: FONTS.heading, color: COLORS.fioreBeyaz, color: COLORS.fioreBeyaz, marginBottom: 4 }}>
           {mode === 'login' ? 'Giriş Yap' : mode === 'register' ? 'Kayıt Ol' : 'Şifremi Unuttum'}
         </div>
-        <div style={{ fontSize: 13, color: COLORS.grayDark, marginBottom: 24, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 24, lineHeight: 1.5 }}>
           {mode === 'login' ? 'Telefon numaran ve şifrenle giriş yap' : mode === 'register' ? 'Yeni hesap oluştur, damga toplamaya başla!' : 'Telefon numaranı gir, e-postana şifre sıfırlama linki gönderelim'}
         </div>
 
@@ -213,7 +213,7 @@ export default function CustomerLogin() {
 
         <div onClick={() => navigate('/')} style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: COLORS.gray, cursor: 'pointer' }}>← Ana Sayfa</div>
 
-        <div style={{ marginTop: 32, padding: '20px', background: COLORS.cream, borderRadius: 22 }}>
+        <div style={{ marginTop: 32, padding: '20px', background: COLORS.warmGray, borderRadius: 22 }}>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
             {[['7', "7'de 1", 'Ücretsiz', COLORS.fioreOrange], ['G', 'GOAT', 'Ayrıcalık', COLORS.gold], ['%', 'Özel', 'Kampanya', COLORS.green]].map(([ic, t1, t2, c]) => (
               <div key={t1} style={{ textAlign: 'center' }}>

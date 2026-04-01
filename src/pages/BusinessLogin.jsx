@@ -53,18 +53,18 @@ export default function BusinessLogin() {
   const inputStyle = {
     width: '100%', padding: '14px 16px', borderRadius: 14,
     border: `1.5px solid ${COLORS.grayLight}`, fontSize: 14,
-    boxSizing: 'border-box', background: COLORS.cream, outline: 'none', fontFamily: f.body,
+    boxSizing: 'border-box', background: COLORS.warmGray, outline: 'none', fontFamily: f.body,
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(170deg, #3D2B1F, #261810)', fontFamily: f.body }}>
+    <div style={{ minHeight: '100vh', background: `radial-gradient(ellipse at 50% 30%, #1A1410 0%, ${COLORS.cream} 70%)`, fontFamily: f.body }}>
       <div style={{ padding: '50px 24px 24px', textAlign: 'center' }}>
         <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 38, opacity: 0.95 }} />
         <div style={{ fontSize: 13, color: COLORS.fioreOrange, fontFamily: f.heading, marginTop: 10, letterSpacing: 2, opacity: 0.7, fontStyle: 'italic' }}>Sei Perfetto</div>
       </div>
 
-      <div style={{ background: COLORS.fioreBeyaz, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 150px)', padding: '28px 24px' }}>
-        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, color: COLORS.fioreSiyah }}>İşletme Girişi</div>
+      <div style={{ background: COLORS.cardBg, borderRadius: '28px 28px 0 0', minHeight: 'calc(100vh - 150px)', padding: '28px 24px' }}>
+        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, color: COLORS.fioreBeyaz }}>İşletme Girişi</div>
         <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 22 }}>Personel veya Admin olarak giriş yap</div>
 
         {/* Tab seçimi */}

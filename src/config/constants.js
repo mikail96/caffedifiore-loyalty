@@ -1,34 +1,40 @@
-// Marka Renkleri — Warm Fiore Tema
+// Marka Renkleri — Dark Fiore Tema
 export const COLORS = {
   fioreOrange: '#EC671A',
-  fioreSiyah: '#2C1E14',
-  headerDark: '#261810',
-  headerGradient: 'linear-gradient(170deg, #3D2B1F, #261810)',
-  fioreBeyaz: '#FFFFFF',
+  fioreSiyah: '#0A0908',
+  headerDark: '#0A0908',
+  headerGradient: 'linear-gradient(170deg, #1A1410, #0A0908)',
+  fioreBeyaz: '#F5F0EB',
   orangeLight: '#E8993A',
-  orangeGlow: 'rgba(236,103,26,0.07)',
-  orangeSoft: 'rgba(236,103,26,0.04)',
-  cream: '#FFF8F2',
-  warmGray: '#F2EAE2',
-  gray: '#B8A596',
-  grayLight: '#F2EAE2',
-  grayDark: '#7A6455',
+  orangeGlow: 'rgba(236,103,26,0.1)',
+  orangeSoft: 'rgba(236,103,26,0.06)',
+  cream: '#0A0908',
+  warmGray: '#1E1A17',
+  gray: '#6B5F56',
+  grayLight: '#1E1A17',
+  grayDark: '#9B8E84',
   green: '#34915A',
-  greenBg: 'rgba(52,145,90,0.06)',
+  greenBg: 'rgba(52,145,90,0.1)',
   gold: '#C8860A',
-  goldBg: 'rgba(200,134,10,0.07)',
+  goldBg: 'rgba(200,134,10,0.1)',
   goldDark: '#A06D08',
   goldLight: '#E8C36E',
-  blue: '#4B8AD4',
-  blueBg: 'rgba(75,138,212,0.06)',
+  blue: '#5B9BD5',
+  blueBg: 'rgba(91,155,213,0.08)',
   red: '#D94444',
   purple: '#8B6CC6',
+  // Dark tema özel
+  cardBg: '#151210',
+  divider: 'rgba(255,255,255,0.06)',
+  textWhite: '#F5F0EB',
+  textMuted: '#9B8E84',
 };
 
-// Font aileleri — DM Sans (hem başlık hem gövde)
+// Font aileleri
 export const FONTS = {
   heading: "'DM Sans', -apple-system, sans-serif",
   body: "'DM Sans', -apple-system, sans-serif",
+  script: "'Dancing Script', cursive",
 };
 
 // Seviye Eşikleri

@@ -3,82 +3,47 @@ import { COLORS, FONTS } from '../../config/constants.js';
 import { maskPhone, calculateLevel } from '../../utils/helpers.js';
 
 const f = FONTS;
-
 export default function CustomerProfile() {
   const { userData } = useAuth();
   if (!userData) return null;
-
   const level = userData.level || calculateLevel(userData.totalStamps || 0);
   const isGoat = level === 'goat';
   const levelLabel = isGoat ? 'Fiore GOAT' : level === 'mudavim' ? 'Fiore Müdavim' : 'Fiore Misafir';
-  const levelColor = isGoat ? COLORS.gold : COLORS.fioreOrange;
+  const lc = isGoat ? COLORS.gold : COLORS.fioreOrange;
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
-      {/* Header */}
-      <div style={{ background: 'linear-gradient(160deg, #3D2B1F, #2A1810)', padding: '24px 24px 28px', textAlign: 'center' }}>
-        <img src="/icons/logo-header.png" alt="" style={{ height: 24, opacity: 0.9 }} />
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: `${levelColor}18`, border: `2px solid ${levelColor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '16px auto 10px', fontSize: 24, fontWeight: 700, color: levelColor, fontFamily: f.heading }}>
-          {userData.name?.charAt(0)}
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.fioreBeyaz, fontFamily: f.heading }}>{userData.name}</div>
-        <div style={{ marginTop: 8 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${levelColor}12`, padding: '6px 16px', borderRadius: 24, border: `1.5px solid ${levelColor}20` }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: levelColor }} />
-            <span style={{ fontSize: 12, color: levelColor, fontWeight: 700 }}>{levelLabel}</span>
-          </span>
+      <div style={{ background: COLORS.headerGradient, padding: '20px 20px 24px', textAlign: 'center', borderBottom: `1px solid ${COLORS.divider}` }}>
+        <div style={{ fontSize: 10, letterSpacing: 4, color: lc, fontWeight: 600, marginBottom: 12, opacity: 0.5 }}>CAFFEDIFIORE</div>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${lc}15`, border: `2px solid ${lc}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontSize: 22, fontWeight: 700, color: lc }}>{userData.name?.charAt(0)}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreBeyaz }}>{userData.name}</div>
+        <div style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, background: `${lc}10`, padding: '5px 12px', borderRadius: 20, border: `1px solid ${lc}15` }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: lc }} />
+          <span style={{ fontSize: 10, color: lc, fontWeight: 600 }}>{levelLabel}</span>
         </div>
       </div>
-
-      <div style={{ padding: '16px 20px 20px' }}>
-        {/* İstatistikler */}
-        <div style={{ background: COLORS.fioreBeyaz, borderRadius: 20, padding: '20px', boxShadow: '0 2px 20px rgba(42,24,16,0.06)', marginBottom: 14 }}>
+      <div style={{ padding: '14px 16px' }}>
+        <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}`, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-            {[
-              [userData.totalStamps || 0, 'Toplam Damga', COLORS.fioreOrange],
-              [Math.floor((userData.totalStamps || 0) / 7), 'Ücretsiz Kahve', COLORS.green],
-              [userData.referralCount || 0, 'Davet', COLORS.blue],
-            ].map(([val, label, color]) => (
-              <div key={label}>
-                <div style={{ fontSize: 28, fontWeight: 700, color, fontFamily: f.heading }}>{val}</div>
-                <div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 600, marginTop: 2 }}>{label}</div>
-              </div>
+            {[[userData.totalStamps||0,'Toplam Damga',COLORS.fioreOrange],[Math.floor((userData.totalStamps||0)/7),'Ücretsiz Kahve',COLORS.green],[userData.referralCount||0,'Davet',COLORS.gold]].map(([v,l,c])=>(
+              <div key={l}><div style={{ fontSize: 28, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 10, color: COLORS.gray, marginTop: 2 }}>{l}</div></div>
             ))}
           </div>
         </div>
-
-        {/* Hesap Bilgileri */}
-        <div style={{ background: COLORS.fioreBeyaz, borderRadius: 20, padding: '20px', boxShadow: '0 2px 20px rgba(42,24,16,0.06)', marginBottom: 14 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: COLORS.fioreSiyah, fontFamily: f.heading }}>Hesap Bilgileri</div>
-          {[
-            ['Telefon', maskPhone(userData.phone || '')],
-            ['E-posta', userData.email || '—'],
-            ['Doğum Tarihi', userData.birthDate || '—'],
-            ['Üyelik', userData.createdAt ? new Date(userData.createdAt.seconds * 1000).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'],
-          ].map(([label, value], i) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}>
-              <span style={{ fontSize: 13, color: COLORS.gray, fontWeight: 500 }}>{label}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreSiyah }}>{value}</span>
+        <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}`, marginBottom: 12 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 14 }}>Hesap Bilgileri</div>
+          {[['Telefon', maskPhone(userData.phone||'')],['E-posta', userData.email||'—'],['Doğum Tarihi', userData.birthDate||'—'],['Üyelik', userData.createdAt?new Date(userData.createdAt.seconds*1000).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}):'—']].map(([l,v],i)=>(
+            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: i?`1px solid ${COLORS.divider}`:'none' }}>
+              <span style={{ fontSize: 13, color: COLORS.gray }}>{l}</span><span style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{v}</span>
             </div>
           ))}
         </div>
-
-        {/* Kurallar */}
-        <div style={{ background: COLORS.fioreBeyaz, borderRadius: 20, padding: '20px', boxShadow: '0 2px 20px rgba(42,24,16,0.06)' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: COLORS.fioreSiyah, fontFamily: f.heading }}>Program Kuralları</div>
-          {[
-            'Damgalar arası minimum 15 dakika bekleme süresi vardır.',
-            'Kahve, blend, kokteyl ve sıcak çikolata damga kazandırır.',
-            'Çay, soğuk içecek, kutulu ürünler ve tatlılar damga kazandırmaz.',
-            '7 damga tamamlandığında 1 ücretsiz kahve hakkı kazanılır.',
-            'Misafir: 0–15 damga  |  Müdavim: 16–39 damga  |  GOAT: 40+ damga',
-            'GOAT üyelere her ay dilediği bir kahve ücretsiz verilir.',
-            'GOAT üyeler tüm alışverişlerinde %10 indirim hakkına sahiptir.',
-            ...(isGoat ? ['Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz.'] : []),
-          ].map((rule, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}>
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: COLORS.fioreOrange, marginTop: 7, flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: COLORS.grayDark, fontWeight: 500, lineHeight: 1.6 }}>{rule}</span>
+        <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}` }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 14 }}>Program Kuralları</div>
+          {['Damgalar arası minimum 15 dakika bekleme süresi vardır.','Kahve, blend, kokteyl ve sıcak çikolata damga kazandırır.','Çay, soğuk içecek, kutulu ürünler ve tatlılar damga kazandırmaz.','7 damga tamamlandığında 1 ücretsiz kahve hakkı kazanılır.','Misafir: 0–15 | Müdavim: 16–39 | GOAT: 40+','GOAT üyelere her ay dilediği bir kahve ücretsiz verilir.','GOAT üyeler tüm alışverişlerinde %10 indirim hakkına sahiptir.',...(isGoat?['Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz.']:[])].map((r,i)=>(
+            <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i?`1px solid ${COLORS.divider}`:'none' }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: COLORS.fioreOrange, marginTop: 6, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: COLORS.grayDark, fontWeight: 500, lineHeight: 1.6 }}>{r}</span>
             </div>
           ))}
         </div>

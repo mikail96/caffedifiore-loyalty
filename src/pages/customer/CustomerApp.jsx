@@ -92,7 +92,7 @@ export default function CustomerApp() {
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 480,
-        background: COLORS.fioreBeyaz, borderTop: `1px solid ${COLORS.grayLight}`,
+        background: COLORS.cardBg, borderTop: `1px solid ${COLORS.divider}`,
         display: 'flex', justifyContent: 'space-around', padding: '10px 0 14px',
         zIndex: 100,
       }}>

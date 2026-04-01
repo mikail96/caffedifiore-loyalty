@@ -142,7 +142,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 4, padding: '12px 16px', background: COLORS.fioreBeyaz, borderBottom: `1px solid ${COLORS.grayLight}`, overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 4, padding: '12px 16px', background: COLORS.cardBg, borderBottom: `1px solid ${COLORS.grayLight}`, overflowX: 'auto' }}>
         {tabs.map(t => <div key={t.id} onClick={() => setTab(t.id)} style={{ padding: '8px 14px', borderRadius: 50, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', background: tab === t.id ? COLORS.fioreSiyah : 'transparent', color: tab === t.id ? COLORS.fioreBeyaz : COLORS.gray }}>{t.label}</div>)}
       </div>
 
