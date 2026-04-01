@@ -99,8 +99,13 @@ export default function CustomerHome() {
             {!isGoat && <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.fioreOrange }}>{nextInfo.next === 'goat' ? 'GOAT' : 'Müdavim'}'e {nextInfo.remaining} kaldı</span>}
             {isGoat && <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.gold }}>GOAT Üye</span>}
           </div>
-          <div style={{ height: 5, background: COLORS.warmGray, borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min((stamps/(nextInfo.next==='goat'?40:16))*100,100)}%`, background: `linear-gradient(90deg, ${isGoat?COLORS.gold:COLORS.fioreOrange}, ${isGoat?COLORS.goldDark:COLORS.orangeLight})`, borderRadius: 3, boxShadow: `0 0 8px ${isGoat?COLORS.gold:COLORS.fioreOrange}40`, transition: 'width 0.5s ease' }} />
+          <div style={{ height: 5, background: COLORS.warmGray, borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ height: '100%', width: `${Math.min((stamps / 40) * 100, 100)}%`, background: `linear-gradient(90deg, ${isGoat ? COLORS.gold : COLORS.fioreOrange}, ${isGoat ? COLORS.goldDark : COLORS.orangeLight})`, borderRadius: 3, boxShadow: `0 0 8px ${isGoat ? COLORS.gold : COLORS.fioreOrange}40`, transition: 'width 0.5s ease' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            {[['Misafir', 0], ['Müdavim', 16], ['GOAT', 40]].map(([l, n]) => (
+              <span key={l} style={{ fontSize: 9, color: stamps >= n ? (l === 'GOAT' ? COLORS.gold : COLORS.fioreOrange) : COLORS.gray, fontWeight: stamps >= n ? 700 : 500 }}>{l} · {n}</span>
+            ))}
           </div>
         </Card>
 
