@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { auth, db } from '../config/firebase.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
 
@@ -11,6 +11,7 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sessionKicked, setSessionKicked] = useState(false);
+  const snapshotUnsub = useRef(null);
 
   const loadCustomerData = async (uid) => {
     const customerDoc = await getDoc(doc(db, 'customers', uid));
@@ -24,24 +25,26 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Önceki snapshot dinleyiciyi temizle
+      if (snapshotUnsub.current) { snapshotUnsub.current(); snapshotUnsub.current = null; }
+
       if (firebaseUser) {
         setUser(firebaseUser);
         await loadCustomerData(firebaseUser.uid);
 
         // Tek oturum dinleyici
-        const unsub = onSnapshot(doc(db, 'customers', firebaseUser.uid), (snap) => {
+        snapshotUnsub.current = onSnapshot(doc(db, 'customers', firebaseUser.uid), (snap) => {
           if (snap.exists()) {
             const data = snap.data();
             setUserData(data);
             const localSession = sessionStorage.getItem('cdf_session');
+            // Sadece localSession varsa ve eşleşmiyorsa at
             if (localSession && data.sessionId && data.sessionId !== localSession) {
-              // Başka cihaz giriş yaptı
               setSessionKicked(true);
               signOut(auth);
             }
           }
         });
-        return () => unsub();
       } else {
         setUser(null);
         setUserData(null);
@@ -49,7 +52,10 @@ export function AuthProvider({ children }) {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (snapshotUnsub.current) snapshotUnsub.current();
+    };
   }, []);
 
   const refreshUser = async () => {
@@ -62,6 +68,7 @@ export function AuthProvider({ children }) {
   const loginAsAdmin = async (adminData) => { setUserData(adminData); setRole('admin'); };
 
   const logout = async () => {
+    if (snapshotUnsub.current) { snapshotUnsub.current(); snapshotUnsub.current = null; }
     try { await signOut(auth); } catch (e) {}
     sessionStorage.removeItem('cdf_session');
     setUser(null); setUserData(null); setRole(null);
