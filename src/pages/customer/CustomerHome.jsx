@@ -73,8 +73,6 @@ export default function CustomerHome() {
   const stamps = userData.totalStamps || 0;
   const card = userData.currentCard || 0;
 
-  const needsScroll = true;
-
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 18px', borderBottom: `1px solid ${COLORS.divider}` }}>

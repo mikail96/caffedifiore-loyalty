@@ -429,15 +429,24 @@ export default function AdminPanel() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: `1px solid ${COLORS.grayLight}` }}>
                 <div style={{ fontSize: 12, color: COLORS.grayDark }}>PIN: <span style={{ fontWeight: 700, background: COLORS.warmGray, color: COLORS.fioreBeyaz, padding: '3px 10px', borderRadius: 6, letterSpacing: 3 }}>{st.pin.length > 4 ? '••••' : st.pin}</span></div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <span onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: '', role: st.role, branch: st.branch }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✎</span>
-                  <span onClick={async () => {
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: '', role: st.role, branch: st.branch }); }} style={{ width: 36, height: 36, borderRadius: 10, background: COLORS.blueBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.blue} strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </div>
+                  <div onClick={async () => {
                     const newStatus = st.status === 'active' ? 'inactive' : 'active';
                     await updateDoc(doc(db, 'staff', st.id), { status: newStatus });
                     setStaffList(p => p.map(s => s.id === st.id ? { ...s, status: newStatus } : s));
-                    msg(newStatus === 'active' ? '✓ Aktif edildi' : '✓ Pasif edildi');
-                  }} style={{ fontSize: 11, color: st.status === 'active' ? COLORS.red : COLORS.green, fontWeight: 700, cursor: 'pointer' }}>{st.status === 'active' ? '■' : '▸'}</span>
-                  <span onClick={async () => { if (!confirm('Bu personeli silmek istediğinize emin misiniz?')) return; await deleteDoc(doc(db, 'staff', st.id)); setStaffList(p => p.filter(s => s.id !== st.id)); msg('✓ Silindi'); }} style={{ fontSize: 11, color: COLORS.red, fontWeight: 700, cursor: 'pointer' }}>🗑️</span>
+                    msg(newStatus === 'active' ? 'Aktif edildi' : 'Pasif edildi');
+                  }} style={{ width: 36, height: 36, borderRadius: 10, background: st.status === 'active' ? 'rgba(217,68,68,0.08)' : COLORS.greenBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    {st.status === 'active'
+                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.red} strokeWidth="2" strokeLinecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    }
+                  </div>
+                  <div onClick={async () => { try { await deleteDoc(doc(db, 'staff', st.id)); setStaffList(p => p.filter(s => s.id !== st.id)); msg('Silindi'); } catch(e) { msg('Hata: ' + e.message); } }} style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(217,68,68,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.red} strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </div>
                 </div>
               </div>
             </>}
