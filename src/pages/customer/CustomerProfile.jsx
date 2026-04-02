@@ -14,7 +14,7 @@ export default function CustomerProfile() {
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 24px', textAlign: 'center', borderBottom: `1px solid ${COLORS.divider}` }}>
-        <div style={{ marginBottom: 12 }}><img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 20, opacity: 0.85 }} /></div>
+        <div style={{ marginBottom: 12 }}><img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 24 }} /></div>
         <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${lc}15`, border: `2px solid ${lc}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontSize: 22, fontWeight: 700, color: lc }}>{userData.name?.charAt(0)}</div>
         <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreBeyaz }}>{userData.name}</div>
         <div style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, background: `${lc}10`, padding: '5px 12px', borderRadius: 20, border: `1px solid ${lc}15` }}>

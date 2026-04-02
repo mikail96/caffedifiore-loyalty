@@ -160,7 +160,7 @@ export default function CustomerLogin() {
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: FONTS.body }}>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 20px 10px' }}>
-        <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 40 }} />
+        <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 45 }} />
       </div>
       <div style={{ textAlign: 'center', color: COLORS.fioreOrange, fontFamily: FONTS.script, fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Sei Perfetto</div>
 

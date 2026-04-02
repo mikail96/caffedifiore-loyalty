@@ -136,7 +136,7 @@ export default function BusinessLogin() {
   return (
     <div style={{ minHeight: '100vh', background: `radial-gradient(ellipse at 50% 30%, #1A1410 0%, ${COLORS.cream} 70%)`, fontFamily: f.body }}>
       <div style={{ padding: '50px 24px 24px', textAlign: 'center' }}>
-        <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 38, opacity: 0.95 }} />
+        <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 42 }} />
         <div style={{ fontSize: 13, color: COLORS.fioreOrange, fontFamily: FONTS.script, marginTop: 10, letterSpacing: 2 }}>Sei Perfetto</div>
       </div>
 

@@ -218,7 +218,7 @@ export default function StaffPanel() {
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(170deg, #3D2B1F, #261810)', padding: '20px 24px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-white.png" alt="" style={{ height: 24, opacity: 0.95 }} /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-white.png" alt="" style={{ height: 28 }} /></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: 3 }}>PERSONEL</div>

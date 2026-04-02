@@ -149,7 +149,7 @@ export default function AdminPanel() {
       {toast && <div style={{ position: 'fixed', top: 40, left: '50%', transform: 'translateX(-50%)', background: COLORS.green, color: COLORS.fioreBeyaz, padding: '12px 24px', borderRadius: 14, fontWeight: 700, fontSize: 14, zIndex: 999, boxShadow: '0 4px 20px rgba(0,0,0,0.25)', maxWidth: 340, textAlign: 'center' }}>{toast}</div>}
 
       <div style={{ background: 'linear-gradient(170deg, #3D2B1F, #261810)', padding: '20px 24px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-white.png" alt="" style={{ height: 24, opacity: 0.95 }} /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}><img src="/icons/logo-white.png" alt="" style={{ height: 28 }} /></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: 3 }}>ADMİN PANELİ</div><div style={{ fontSize: 20, fontWeight: 700, color: COLORS.fioreBeyaz, marginTop: 4 }}>Merhaba Mikail</div></div>
           <div onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: COLORS.fioreOrange, cursor: 'pointer', background: COLORS.orangeGlow, padding: '6px 14px', borderRadius: 50, fontWeight: 600, border: '1px solid rgba(236,103,26,0.15)' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Çıkış</div>
