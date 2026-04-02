@@ -6,11 +6,10 @@ import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory } from '../../services/menuService.js';
 
 const f = FONTS;
-const HeartIcon = ({ filled }) => <svg width="18" height="18" viewBox="0 0 24 24" fill={filled ? COLORS.red : 'none'} stroke={filled ? COLORS.red : COLORS.grayDark} strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>;
 
 export default function CustomerMenu() {
   const [activeCategory, setActiveCategory] = useState(0);
-  const [favorites, setFavorites] = useState(new Set());
+  
   const [menuData, setMenuData] = useState(MENU_DATA);
   const [sizes, setSizes] = useState({ hotSmall: '14oz', hotLarge: '16oz', coldSize: '16oz' });
 
@@ -20,7 +19,7 @@ export default function CustomerMenu() {
   }, []);
 
   const menu = menuData[activeCategory];
-  const toggleFav = (n) => { const s = new Set(favorites); if (s.has(n)) s.delete(n); else s.add(n); setFavorites(s); };
+  
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
@@ -41,7 +40,7 @@ export default function CustomerMenu() {
           {menu.type === 'cold' && <span style={{ fontSize: 10, color: COLORS.gray }}>{sizes.coldSize}</span>}
         </div>
         {menu.items.map(item => {
-          const isFav = favorites.has(item.name);
+          
           const dual = menu.type === 'hot' && item.price16oz && !item.singleSize;
           return (
             <div key={item.name} style={{ background: COLORS.cardBg, borderRadius: 16, padding: '13px 14px', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${COLORS.divider}` }}>
@@ -65,7 +64,6 @@ export default function CustomerMenu() {
                   <div>{item.sizeLabel && <div style={{ fontSize: 9, color: COLORS.gray }}>{item.sizeLabel}</div>}<div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz }}>₺{item.price14oz || item.price16oz || item.price}</div></div>
                 )}
               </div>
-              {menu.type !== 'extra' && <div onClick={() => toggleFav(item.name)} style={{ cursor: 'pointer', flexShrink: 0 }}><HeartIcon filled={isFav} /></div>}
             </div>
           );
         })}
