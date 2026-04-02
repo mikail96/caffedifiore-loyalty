@@ -4,8 +4,9 @@ import App from './App.jsx';
 
 const style = document.createElement('style');
 style.textContent = `
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { overscroll-behavior: none; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  html, body { overscroll-behavior: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
   body { background: #0A0908; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   input, textarea, select { outline: none; -webkit-tap-highlight-color: transparent; }
   button, a, div { -webkit-tap-highlight-color: transparent; outline: none; }

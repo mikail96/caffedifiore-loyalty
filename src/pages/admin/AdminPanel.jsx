@@ -409,14 +409,16 @@ export default function AdminPanel() {
               <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Şube</div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{branchKeys.map(b => <div key={b} onClick={() => setEditForm(p => ({ ...p, branch: b }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.branch === b ? COLORS.fioreOrange : COLORS.warmGray, color: editForm.branch === b ? COLORS.fioreBeyaz : COLORS.grayDark }}>{branches[b]?.shortName || branches[b]?.name}</div>)}</div></div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <div style={{ flex: 1 }}><Bt onClick={async () => {
-                  const updates = { ...editForm };
-                  // PIN değiştiyse hashle (4 haneli ise yeni PIN)
-                  if (updates.pin && updates.pin.length === 4 && /^\d{4}$/.test(updates.pin)) {
-                    updates.pin = await hashPin(updates.pin);
-                  }
-                  await updateDoc(doc(db, 'staff', st.id), updates);
-                  setStaffList(p => p.map(s => s.id === st.id ? { ...s, ...updates } : s));
-                  setEditingStaff(null); msg('Güncellendi!');
+                  try {
+                    const updates = { username: editForm.username, role: editForm.role, branch: editForm.branch };
+                    // PIN değiştiyse hashle (4 haneli yeni PIN girildiyse)
+                    if (editForm.pin && editForm.pin.length === 4 && /^\d{4}$/.test(editForm.pin)) {
+                      updates.pin = await hashPin(editForm.pin);
+                    }
+                    await updateDoc(doc(db, 'staff', st.id), updates);
+                    setStaffList(p => p.map(s => s.id === st.id ? { ...s, ...updates } : s));
+                    setEditingStaff(null); msg('Güncellendi!');
+                  } catch (e) { msg('Hata: ' + e.message); console.error(e); }
                 }} color={COLORS.green} sm>Kaydet</Bt></div>
                 <div style={{ flex: 1 }}><Bt onClick={() => setEditingStaff(null)} color={COLORS.gray} sm>İptal</Bt></div>
               </div>
