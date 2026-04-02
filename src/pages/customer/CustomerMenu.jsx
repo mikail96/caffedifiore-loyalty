@@ -25,7 +25,7 @@ export default function CustomerMenu() {
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 16px', borderBottom: `1px solid ${COLORS.divider}` }}>
-        <div style={{ textAlign: 'center', fontSize: 10, letterSpacing: 4, color: COLORS.fioreOrange, fontWeight: 600, marginBottom: 8, opacity: 0.5 }}>CAFFEDIFIORE</div>
+        <div style={{ textAlign: 'center', marginBottom: 8 }}><img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 20, opacity: 0.85 }} /></div>
         <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.fioreBeyaz }}>Menü</div>
         <div style={{ fontFamily: f.script, fontSize: 16, color: COLORS.fioreOrange, marginTop: 2 }}>Sei Perfetto</div>
       </div>

@@ -79,7 +79,7 @@ export default function CustomerHome() {
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 18px', borderBottom: `1px solid ${COLORS.divider}` }}>
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
-          <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 22, opacity: 0.9 }} />
+          <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 22, opacity: 0.9 }} />
           <div style={{ fontFamily: FONTS.script, fontSize: 14, color: isGoat ? COLORS.gold : COLORS.fioreOrange, marginTop: 4 }}>Sei Perfetto</div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

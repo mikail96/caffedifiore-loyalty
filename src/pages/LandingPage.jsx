@@ -13,7 +13,7 @@ export default function LandingPage() {
       <div style={{ position: 'absolute', top: '15%', left: -40, width: 120, height: 120, borderRadius: '50%', border: '1px solid rgba(236,103,26,0.04)' }} />
       <div style={{ position: 'absolute', bottom: '20%', right: -30, width: 90, height: 90, borderRadius: '50%', border: '1px solid rgba(236,103,26,0.05)' }} />
 
-      <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 44, opacity: 0.95, marginBottom: 16 }} />
+      <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 44, opacity: 0.95, marginBottom: 16 }} />
       <div style={{ fontFamily: FONTS.script, fontSize: 30, color: COLORS.fioreOrange, fontWeight: 700, marginBottom: 48, textShadow: '0 0 30px rgba(236,103,26,0.15)' }}>Sei Perfetto</div>
 
       <div style={{ width: '100%', maxWidth: 300 }}>
