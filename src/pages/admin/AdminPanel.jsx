@@ -109,7 +109,8 @@ export default function AdminPanel() {
     else if (newTotal < 16) nl = 'misafir';
     await updateDoc(doc(db, 'customers', custId), { currentCard: newCard, totalStamps: newTotal, level: nl });
     setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: newCard, totalStamps: newTotal, level: nl } : x));
-    const logEntry = { customerId: custId, customerName: c.name, staffId: 'admin', staffName: 'Admin', branchId: 'admin', type: delta > 0 ? 'admin_add' : 'admin_remove', cardAfter: newCard, timestamp: { seconds: Date.now() / 1000 } };
+    const now = new Date();
+    const logEntry = { customerId: custId, customerName: c.name, staffId: 'admin', staffName: 'Admin', branchId: 'admin', type: delta > 0 ? 'admin_add' : 'admin_remove', cardAfter: newCard, timestamp: { seconds: now.getTime() / 1000, toDate: () => now } };
     await addDoc(collection(db, 'stampLogs'), { ...logEntry, timestamp: serverTimestamp() });
     setStampLogs(p => [logEntry, ...p]);
 
