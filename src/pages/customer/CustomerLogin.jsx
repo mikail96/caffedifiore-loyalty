@@ -46,7 +46,7 @@ export default function CustomerLogin() {
       return;
     }
     const clean = phone.replace(/\D/g, '');
-    if (clean.length < 10) { setError('Geçerli bir telefon numarası girin'); return; }
+    if (clean.length !== 10) { setError('Telefon numarası 10 haneli olmalıdır'); return; }
     if (password.length < 4) { setError('Şifrenizi girin'); return; }
     setLoading(true); setError('');
     let customerEmail = null;
@@ -81,7 +81,7 @@ export default function CustomerLogin() {
   // Kayıt ol
   const handleRegister = async () => {
     const clean = phone.replace(/\D/g, '');
-    if (clean.length < 10) { setError('Geçerli bir telefon numarası girin'); return; }
+    if (clean.length !== 10) { setError('Telefon numarası 10 haneli olmalıdır'); return; }
     if (!name.trim() || name.trim().length < 3) { setError('Adınızı ve soyadınızı girin'); return; }
     if (!email.trim() || !email.includes('@')) { setError('Geçerli bir e-posta adresi girin'); return; }
     if (password.length < 6) { setError('Şifre en az 6 karakter olmalı'); return; }
@@ -177,7 +177,7 @@ export default function CustomerLogin() {
           <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Telefon Numarası</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ padding: '14px 12px', background: COLORS.warmGray, borderRadius: 12, fontWeight: 700, fontSize: 14, color: COLORS.grayDark }}>+90</div>
-            <input type="tel" placeholder="5XX XXX XX XX" value={phone} onChange={e => setPhone(e.target.value)} style={{ ...inputStyle, textAlign: 'center', letterSpacing: 1 }} maxLength={11} />
+            <input type="tel" placeholder="5XX XXX XX XX" value={phone} onChange={e => { const v = e.target.value.replace(/\D/g, ''); if (v.length <= 10) setPhone(v); }} style={{ ...inputStyle, textAlign: 'center', letterSpacing: 1 }} maxLength={10} inputMode="numeric" />
           </div>
         </div>
 
@@ -198,7 +198,12 @@ export default function CustomerLogin() {
           <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.grayDark, marginBottom: 6 }}>Şifre</div>
           <div style={{ position: 'relative' }}>
             <input type={showPass ? 'text' : 'password'} placeholder={mode === 'register' ? 'En az 6 karakter' : 'Şifreniz'} value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, paddingRight: 44 }} />
-            <span onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: 16 }}>{showPass ? '🙈' : '👁️'}</span>
+            <span onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              {showPass
+                ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9B8E84" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9B8E84" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              }
+            </span>
           </div>
         </div>}
 
