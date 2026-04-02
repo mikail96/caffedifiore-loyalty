@@ -36,14 +36,13 @@ service cloud.firestore {
     }
 
     // ===== PERSONEL =====
-    // TODO: PIN'ler Cloud Function ile gizlenecek
     match /staff/{staffId} {
       allow read: if true;
-      allow create, update: if request.resource.data.keys().hasAll(['name', 'username', 'pin', 'role', 'branch', 'status'])
-                            && request.resource.data.status in ['active', 'inactive']
-                            && request.resource.data.pin is string
-                            && request.resource.data.pin.size() == 4;
-      allow delete: if true;
+      allow create: if request.resource.data.keys().hasAll(['name', 'username', 'pin', 'role', 'branch', 'status'])
+                    && request.resource.data.status in ['active', 'inactive']
+                    && request.resource.data.pin is string;
+      allow update, delete: if true;
+    }
     }
 
     // ===== AYARLAR =====

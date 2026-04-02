@@ -22,7 +22,7 @@ export default function CustomerProfile() {
           <span style={{ fontSize: 10, color: lc, fontWeight: 600 }}>{levelLabel}</span>
         </div>
       </div>
-      <div style={{ padding: '14px 16px' }}>
+      <div style={{ padding: '14px 16px 80px' }}>
         <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}`, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
             {[[userData.totalStamps||0,'Toplam Damga',COLORS.fioreOrange],[Math.floor((userData.totalStamps||0)/7),'Ücretsiz Kahve',COLORS.green],[userData.referralCount||0,'Davet',COLORS.gold]].map(([v,l,c])=>(
