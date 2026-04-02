@@ -73,10 +73,10 @@ export default function CustomerHome() {
   const stamps = userData.totalStamps || 0;
   const card = userData.currentCard || 0;
 
-  const needsScroll = campaigns.length > 0 || isGoat;
+  const needsScroll = true;
 
   return (
-    <div style={{ minHeight: '100vh', height: needsScroll ? 'auto' : '100vh', overflow: needsScroll ? 'auto' : 'hidden', background: COLORS.cream, fontFamily: f.body, overscrollBehavior: 'none' }}>
+    <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 18px', borderBottom: `1px solid ${COLORS.divider}` }}>
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
           <img src="/icons/logo-header.png" alt="CaffeDiFiore" style={{ height: 22, opacity: 0.9 }} />
@@ -94,7 +94,7 @@ export default function CustomerHome() {
         </div>
       </div>
 
-      <div style={{ padding: '14px 16px' }}>
+      <div style={{ padding: '14px 16px 80px' }}>
         <Card style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
