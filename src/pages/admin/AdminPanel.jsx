@@ -404,7 +404,7 @@ export default function AdminPanel() {
             {editingStaff === st.id ? <div>
               <div style={{ fontSize: 13, fontWeight: 800, color: COLORS.blue, marginBottom: 10 }}>Düzenle: {st.name}</div>
               <Inp label="Kullanıcı Adı" value={editForm.username || ''} onChange={v => setEditForm(p => ({ ...p, username: v }))} />
-              <Inp label="PIN" value={editForm.pin || ''} onChange={v => { if (/^\d{0,4}$/.test(v)) setEditForm(p => ({ ...p, pin: v })); }} />
+              <Inp label="Yeni PIN (boş bırakırsan değişmez)" value={editForm.pin || ''} onChange={v => { if (/^\d{0,4}$/.test(v)) setEditForm(p => ({ ...p, pin: v })); }} />
               <div style={{ marginBottom: 8 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Rol</div><div style={{ display: 'flex', gap: 5 }}>{['Barista', 'Part-time', 'Müdür'].map(r => <div key={r} onClick={() => setEditForm(p => ({ ...p, role: r }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.role === r ? COLORS.blue : COLORS.warmGray, color: editForm.role === r ? COLORS.fioreBeyaz : COLORS.grayDark }}>{r}</div>)}</div></div>
               <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Şube</div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{branchKeys.map(b => <div key={b} onClick={() => setEditForm(p => ({ ...p, branch: b }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.branch === b ? COLORS.fioreOrange : COLORS.warmGray, color: editForm.branch === b ? COLORS.fioreBeyaz : COLORS.grayDark }}>{branches[b]?.shortName || branches[b]?.name}</div>)}</div></div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -428,9 +428,9 @@ export default function AdminPanel() {
                 <B text={st.status === 'active' ? 'Aktif' : 'Pasif'} color={st.status === 'active' ? COLORS.green : COLORS.gray} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: `1px solid ${COLORS.grayLight}` }}>
-                <div style={{ fontSize: 12, color: COLORS.grayDark }}>PIN: <span style={{ fontWeight: 700, background: COLORS.warmGray, color: COLORS.fioreBeyaz, padding: '3px 10px', borderRadius: 6, letterSpacing: 3 }}>{st.pin}</span></div>
+                <div style={{ fontSize: 12, color: COLORS.grayDark }}>PIN: <span style={{ fontWeight: 700, background: COLORS.warmGray, color: COLORS.fioreBeyaz, padding: '3px 10px', borderRadius: 6, letterSpacing: 3 }}>{st.pin.length > 4 ? '••••' : st.pin}</span></div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <span onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: st.pin, role: st.role, branch: st.branch }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✎</span>
+                  <span onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: '', role: st.role, branch: st.branch }); }} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer' }}>✎</span>
                   <span onClick={async () => {
                     const newStatus = st.status === 'active' ? 'inactive' : 'active';
                     await updateDoc(doc(db, 'staff', st.id), { status: newStatus });
