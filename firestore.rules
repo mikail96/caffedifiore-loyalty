@@ -43,7 +43,6 @@ service cloud.firestore {
                     && request.resource.data.pin is string;
       allow update, delete: if true;
     }
-    }
 
     // ===== AYARLAR =====
     // Yeni ayar oluşturulamaz, silinemez — sadece güncelleme
