@@ -48,8 +48,8 @@ service cloud.firestore {
     // Yeni ayar oluşturulamaz, silinemez — sadece güncelleme
     match /settings/{settingId} {
       allow read: if true;
-      allow update: if true;
-      allow create, delete: if false;
+      allow create, update: if true;
+      allow delete: if false;
     }
 
     // ===== KAMPANYALAR =====

@@ -95,6 +95,52 @@ exports.sendCampaignNotification = onDocumentCreated(
 );
 
 /**
+ * Damga verilince müşteriye push bildirim gönder
+ */
+exports.sendStampNotification = onDocumentCreated(
+  { document: "stampLogs/{logId}", region: "europe-west1" },
+  async (event) => {
+    const log = event.data.data();
+    if (!log.customerId) return;
+
+    // Sadece damga, ücretsiz ve GOAT işlemlerinde bildirim
+    const messages = {
+      stamp: `Yeni damga eklendi! Kart: ${log.cardAfter || '?'}/7`,
+      free_redeemed: 'Ücretsiz kahven kullanıldı! Kart sıfırlandı.',
+      goat_monthly: 'GOAT aylık ücretsiz kahven kullanıldı!',
+      referral_bonus: 'Referans bonusu! Arkadaşın ilk kahvesini aldı, +1 damga kazandın.',
+    };
+
+    const body = messages[log.type];
+    if (!body) return; // admin_add, admin_remove için bildirim yok
+
+    try {
+      const custDoc = await db.collection("customers").doc(log.customerId).get();
+      if (!custDoc.exists) return;
+      const token = custDoc.data().fcmToken;
+      if (!token) return;
+
+      await messaging.send({
+        token,
+        webpush: {
+          notification: {
+            title: "CaffeDiFiore",
+            body,
+            icon: "/icons/icon-192.png",
+            badge: "/icons/icon-64.png",
+            tag: "stamp-" + event.params.logId,
+          },
+          fcmOptions: { link: "https://caffedifiore-loyalty.web.app" },
+        },
+      });
+      console.log(`Bildirim gönderildi: ${log.customerName} — ${log.type}`);
+    } catch (err) {
+      console.log("Stamp bildirim hatası:", err.message);
+    }
+  }
+);
+
+/**
  * Her ayın 1'inde GOAT aylık ücretsiz sıfırla
  * Schedule: Her ayın 1'i saat 00:00 (Türkiye saati)
  */

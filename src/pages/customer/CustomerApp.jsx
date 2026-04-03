@@ -79,7 +79,7 @@ export default function CustomerApp() {
       {/* Bildirim izin promptu */}
       {showNotifPrompt && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, padding: '12px 16px', background: 'linear-gradient(135deg, #3D2B1F, #2A1810)', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-          <span style={{ fontSize: 24 }}>🔔</span>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={COLORS.fioreOrange} strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreBeyaz }}>Bildirimleri Aç</div>
             <div style={{ fontSize: 11, color: COLORS.gray }}>Kampanya ve fırsatlardan haberdar ol!</div>
@@ -92,8 +92,8 @@ export default function CustomerApp() {
       {/* In-app bildirim banner */}
       {notifBanner && (
         <div style={{ position: 'fixed', top: 10, left: '50%', transform: 'translateX(-50%)', zIndex: 999, background: COLORS.fioreOrange, color: COLORS.fioreBeyaz, padding: '14px 20px', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.25)', maxWidth: 360, width: '90%' }}>
-          <div style={{ fontSize: 14, fontWeight: 800 }}>{notifBanner.title || 'CaffeDiFiore'}</div>
-          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>{notifBanner.body}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, fontFamily: FONTS.body }}>{notifBanner.title || 'CaffeDiFiore'}</div>
+          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9, fontFamily: FONTS.body }}>{notifBanner.body}</div>
         </div>
       )}
 

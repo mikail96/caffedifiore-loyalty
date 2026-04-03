@@ -128,12 +128,12 @@ export default function AdminPanel() {
           await updateDoc(doc(db, 'customers', c.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
           setCustomers(p => p.map(x => x.id === c.referredBy ? { ...x, currentCard: rnc, totalStamps: rnt, level: rnl } : x));
           await addDoc(collection(db, 'stampLogs'), { customerId: c.referredBy, customerName: rd.name, staffId: 'admin', staffName: 'Referans Bonus', branchId: 'admin', type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
-          msg(`✓ ${rd.name} referans bonusu aldı!`);
+          msg(`${rd.name} referans bonusu aldı!`);
         }
       } catch (e) { console.error('Referans bonus hatası:', e); }
     }
 
-    msg(`✓ ${c.name}: ${delta > 0 ? '+1 damga' : '-1 damga'} → ${newCard}/7 (toplam: ${newTotal})`);
+    msg(`${c.name}: ${delta > 0 ? '+1 damga' : '-1 damga'} → ${newCard}/7 (toplam: ${newTotal})`);
   };
 
   const resetCard = async (custId) => {
@@ -141,7 +141,7 @@ export default function AdminPanel() {
     if (!c) return;
     await updateDoc(doc(db, 'customers', custId), { currentCard: 0 });
     setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: 0 } : x));
-    msg(`✓ ${c.name} kartı sıfırlandı (0/7)`);
+    msg(`${c.name} kartı sıfırlandı (0/7)`);
   };
 
   return (
@@ -343,7 +343,7 @@ export default function AdminPanel() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ fontSize: 14, fontWeight: 600, color: COLORS.fioreBeyaz }}>{c.name}</span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div>
               <div style={{ fontSize: 11, color: COLORS.grayDark, marginTop: 2 }}>Kart: {c.currentCard || 0}/7 · Toplam: {c.totalStamps || 0}</div>
             </div>
-            <div onClick={() => setEditingCust(editingCust === c.id ? null : c.id)} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 10px', borderRadius: 8 }}>{editingCust === c.id ? '✕' : '✎'}</div>
+            <div onClick={() => setEditingCust(editingCust === c.id ? null : c.id)} style={{ fontSize: 11, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 10px', borderRadius: 8 }}>{editingCust === c.id ? 'Kapat' : 'Düzenle'}</div>
           </div>
           {editingCust === c.id && <div style={{ paddingTop: 10, borderTop: `1px solid ${COLORS.divider}` }}>
             {/* Müşteri Detayları */}
@@ -364,7 +364,7 @@ export default function AdminPanel() {
             <Bt onClick={() => { resetCard(c.id); setEditingCust(null); }} color={COLORS.gray} sm>Kartı Sıfırla (0/7)</Bt>
             {c.level === 'goat' && <div style={{ marginTop: 6 }}><Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>GOAT Aylık Sıfırla</Bt></div>}
             <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.divider}`, paddingTop: 10 }}>
-              <Bt onClick={async () => { if (!confirm(`${c.name} silinsin mi? Bu işlem geri alınamaz!`)) return; await deleteDoc(doc(db, 'customers', c.id)); setCustomers(p => p.filter(x => x.id !== c.id)); setEditingCust(null); msg(`${c.name} silindi`); }} color={COLORS.red} sm>Müşteriyi Sil</Bt>
+              <Bt onClick={async () => { await deleteDoc(doc(db, 'customers', c.id)); setCustomers(p => p.filter(x => x.id !== c.id)); setEditingCust(null); msg(`${c.name} silindi`); }} color={COLORS.red} sm>Müşteriyi Sil</Bt>
             </div>
           </div>}
         </C>)}
@@ -466,8 +466,8 @@ export default function AdminPanel() {
             await setDoc(doc(db, 'branches', brId), { name: newBranch.name, shortName: newBranch.shortName, lat: null, lng: null });
             setBranches(p => ({ ...p, [brId]: { name: newBranch.name, shortName: newBranch.shortName, lat: null, lng: null } }));
             setNewBranch({ name: '', shortName: '' });
-            msg('✓ Şube eklendi! GPS kaydetmek için şubeye gidin.');
-          }} color={COLORS.green}>✓ Şube Ekle</Bt>
+            msg('Şube eklendi! GPS kaydetmek için şubeye gidin.');
+          }} color={COLORS.green}>Şube Ekle</Bt>
         </C>
 
         {branchKeys.map(bid => {
@@ -487,18 +487,18 @@ export default function AdminPanel() {
                   async (pos) => {
                     await updateDoc(doc(db, 'branches', bid), { lat: pos.coords.latitude, lng: pos.coords.longitude });
                     setBranches(p => ({ ...p, [bid]: { ...p[bid], lat: pos.coords.latitude, lng: pos.coords.longitude } }));
-                    msg(`✓ ${br.shortName || br.name} konumu kaydedildi!`);
+                    msg(`${br.shortName || br.name} konumu kaydedildi!`);
                   },
                   () => msg('Konum alınamadı!'),
                   { enableHighAccuracy: true }
                 );
               }} color={COLORS.blue} sm>Konum {hasCoords ? 'Güncelle' : 'Kaydet'}</Bt></div>
               <div style={{ flex: 1 }}><Bt onClick={async () => {
-                if (!confirm(`${br.name} şubesini silmek istediğinize emin misiniz?`)) return;
+                
                 await deleteDoc(doc(db, 'branches', bid));
                 setBranches(p => { const n = { ...p }; delete n[bid]; return n; });
-                msg('✓ Şube silindi');
-              }} color={COLORS.red} sm>🗑️ Sil</Bt></div>
+                msg('Şube silindi');
+              }} color={COLORS.red} sm>Sil</Bt></div>
             </div>
           </C>;
         })}
@@ -515,7 +515,7 @@ export default function AdminPanel() {
             if (!newCamp.title.trim()) { msg('Başlık girin!'); return; }
             const ref = await addDoc(collection(db, 'campaigns'), { title: newCamp.title.trim(), description: newCamp.desc.trim(), target: newCamp.target, active: true, createdAt: serverTimestamp() });
             setCampaigns(p => [{ id: ref.id, title: newCamp.title.trim(), description: newCamp.desc.trim(), target: newCamp.target, active: true, createdAt: { seconds: Date.now() / 1000 } }, ...p]);
-            setNewCamp({ title: '', desc: '', target: 'all' }); msg('✓ Yayınlandı!');
+            setNewCamp({ title: '', desc: '', target: 'all' }); msg('Yayınlandı!');
           }} color={COLORS.green}>Yayınla</Bt>
         </C>
         {campaigns.filter(c => c.active).length > 0 && <><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 8 }}>Aktif</div>{campaigns.filter(c => c.active).map(c => <C key={c.id} style={{ marginBottom: 8 }}>
@@ -562,7 +562,7 @@ export default function AdminPanel() {
                 await setDoc(doc(db, 'settings', 'sizes'), sizesForm);
                 setSizes(sizesForm);
                 setEditingSizes(false);
-                msg('✓ Boyutlar güncellendi!');
+                msg('Boyutlar güncellendi!');
               }} color={COLORS.green} sm>Kaydet</Bt></div>
               <div style={{ flex: 1 }}><Bt onClick={() => setEditingSizes(false)} color={COLORS.gray} sm>İptal</Bt></div>
             </div>
@@ -625,7 +625,7 @@ export default function AdminPanel() {
             await setDoc(doc(db, 'menuItems', id), data);
             setMenuItems(p => [...p, { id, ...data }]);
             setNewMenu({ name: '', category: '', price14oz: '', price16oz: '', price: '', type: 'hot', categoryIcon: '', priceType: 'dual', sizeLabel: '' });
-            msg('✓ Ürün eklendi!');
+            msg('Ürün eklendi!');
           }} color={COLORS.green}>✓ Ürün Ekle</Bt>
         </C>
 
@@ -655,7 +655,7 @@ export default function AdminPanel() {
                         const upd = { name: menuEditForm.name, price14oz: Number(menuEditForm.price14oz) || 0, price16oz: Number(menuEditForm.price16oz) || 0 };
                         await updateDoc(doc(db, 'menuItems', item.id), upd);
                         setMenuItems(p => p.map(x => x.id === item.id ? { ...x, ...upd } : x));
-                        setEditingMenuItem(null); msg(`✓ ${menuEditForm.name} güncellendi!`);
+                        setEditingMenuItem(null); msg(`${menuEditForm.name} güncellendi!`);
                       }} color={COLORS.green} sm>Kaydet</Bt></div>
                       <div style={{ flex: 1 }}><Bt onClick={() => setEditingMenuItem(null)} color={COLORS.gray} sm>İptal</Bt></div>
                     </div>
