@@ -76,11 +76,11 @@ export default function CustomerHome() {
   return (
     <div style={{ minHeight: '100vh', background: COLORS.cream, fontFamily: f.body }}>
       <div style={{ background: COLORS.headerGradient, padding: '20px 20px 18px', borderBottom: `1px solid ${COLORS.divider}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 }}>
-          <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 28 }} />
-          <div onClick={() => window.open('https://www.instagram.com/caffedifiore.tr?igsh=MWFvZnB4dXphYXY1cA==', '_blank')} style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, position: 'relative' }}>
+          <div onClick={() => window.open('https://www.instagram.com/caffedifiore.tr?igsh=MWFvZnB4dXphYXY1cA==', '_blank')} style={{ position: 'absolute', left: 0, width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isGoat ? COLORS.gold : COLORS.fioreOrange} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
           </div>
+          <img src="/icons/logo-white.png" alt="CaffeDiFiore" style={{ height: 28 }} />
         </div>
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
           <div style={{ fontFamily: FONTS.script, fontSize: 14, color: isGoat ? COLORS.gold : COLORS.fioreOrange }}>Sei Perfetto</div>
