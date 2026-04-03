@@ -17,7 +17,7 @@ exports.sendCampaignNotification = onDocumentCreated(
     const campaign = event.data.data();
     if (!campaign.active) return;
 
-    const title = "CaffeDiFiore ☕";
+    const title = "CaffeDiFiore";
     const body = campaign.title + (campaign.description ? " — " + campaign.description : "");
 
     // Hedef kitleye göre müşterileri filtrele
