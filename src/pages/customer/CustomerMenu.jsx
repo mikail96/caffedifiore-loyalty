@@ -57,8 +57,8 @@ export default function CustomerMenu() {
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 {dual ? (
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 9, color: COLORS.gray }}>{sizes.hotSmall}</div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>₺{item.price14oz}</div></div>
-                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 9, color: COLORS.gray }}>{sizes.hotLarge}</div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>₺{item.price16oz}</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 9, color: COLORS.gray }}>{item.sizeLabel14 || sizes.hotSmall}</div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>₺{item.price14oz}</div></div>
+                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: 9, color: COLORS.gray }}>{item.sizeLabel16 || sizes.hotLarge}</div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>₺{item.price16oz}</div></div>
                   </div>
                 ) : (
                   <div>{item.sizeLabel && <div style={{ fontSize: 9, color: COLORS.gray }}>{item.sizeLabel}</div>}<div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz }}>₺{item.price14oz || item.price16oz || item.price}</div></div>

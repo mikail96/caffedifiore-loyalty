@@ -57,7 +57,7 @@ export const MENU_DATA = [
     stampEligible: false, // Çay damga kazandırmaz, filtre kahve kazandırır
     items: [
       { name: 'Filtre Kahve', price14oz: 140, price16oz: 150, stampEligible: true },
-      { name: 'Türk Kahvesi', price14oz: 100, price16oz: 120, stampEligible: true },
+      { name: 'Türk Kahvesi', price14oz: 100, price16oz: 120, stampEligible: true, sizeLabel14: 'Single', sizeLabel16: 'Double' },
       { name: 'Bitki Çayı', price14oz: 100, singleSize: true, stampEligible: false },
       { name: 'Çay', price14oz: 60, singleSize: true, stampEligible: false },
     ],

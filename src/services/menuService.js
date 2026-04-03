@@ -34,6 +34,8 @@ export async function seedMenu() {
         price14oz: item.price14oz || item.price || 0,
         price16oz: item.price16oz || 0,
         singleSize: item.singleSize || false,
+        sizeLabel14: item.sizeLabel14 || '',
+        sizeLabel16: item.sizeLabel16 || '',
         isGoat: item.isGoat || false,
         stampEligible: item.stampEligible !== undefined ? item.stampEligible : (cat.stampEligible || false),
         note: item.note || '',
