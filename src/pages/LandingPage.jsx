@@ -29,7 +29,12 @@ export default function LandingPage() {
         }}>Kayıt Ol</div>
       </div>
 
-      <div style={{ marginTop: 56, textAlign: 'center' }}>
+      <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' }} onClick={() => window.open('https://www.instagram.com/caffedifiore.tr?igsh=MWFvZnB4dXphYXY1cA==', '_blank')}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>@caffedifiore.tr</span>
+      </div>
+
+      <div style={{ marginTop: 20, textAlign: 'center' }}>
         <div onClick={() => navigate('/isletme/giris')} style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', cursor: 'pointer', padding: '8px 16px' }}>İşletme Girişi →</div>
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.08)', marginTop: 12 }}>CaffeDiFiore © 2016</div>
       </div>
