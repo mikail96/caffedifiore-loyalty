@@ -79,11 +79,11 @@ export default function CustomerProfile() {
         </div>
 
         {/* Instagram */}
-        <div onClick={() => window.open('https://www.instagram.com/caffedifiore/', '_blank')} style={{ background: COLORS.cardBg, borderRadius: 20, padding: '16px 18px', border: `1px solid ${COLORS.divider}`, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+        <div onClick={() => window.open('https://www.instagram.com/caffedifiore.tr?igsh=MWFvZnB4dXphYXY1cA==', '_blank')} style={{ background: COLORS.cardBg, borderRadius: 20, padding: '16px 18px', border: `1px solid ${COLORS.divider}`, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #E1306C, #F77737, #FCAF45)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><InstaIcon /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>Bizi Takip Edin</div>
-            <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 2 }}>@caffedifiore</div>
+            <div style={{ fontSize: 12, color: COLORS.grayDark, marginTop: 2 }}>@caffedifiore.tr</div>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.gray} strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </div>
