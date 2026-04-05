@@ -42,15 +42,11 @@ export default function StaffPanel() {
 
     // Bugünkü personel istatistikleri
     if (userData?.id) {
-
-
       getDocs(query(collection(db, 'stampLogs'), where('staffId', '==', userData.id)))
         .then(snap => {
           let s = 0, f = 0;
           snap.docs.forEach(d => {
             const data = d.data();
-            const ts = data.timestamp?.toDate?.() || (data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000) : null);
-            if (!ts || ts < today) return;
             if (data.type === 'stamp') s++;
             else if (data.type === 'free_redeemed' || data.type === 'goat_monthly') f++;
           });
