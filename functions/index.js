@@ -1,12 +1,181 @@
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
 const db = getFirestore();
 const messaging = getMessaging();
+
+// Seviye hesaplama (frontend ile aynı mantık)
+function calculateLevel(totalStamps) {
+  if (totalStamps >= 200) return 'goat';
+  if (totalStamps >= 50) return 'mudavim';
+  return 'misafir';
+}
+
+// Personel/admin doğrulama
+async function verifyStaff(staffId) {
+  if (!staffId) throw new HttpsError('unauthenticated', 'staffId gerekli');
+  const snap = await db.collection('staff').doc(staffId).get();
+  if (!snap.exists || snap.data().status !== 'active') {
+    // Admin kontrolü — settings/admin kontrol et
+    const adminSnap = await db.collection('settings').doc('admin').get();
+    if (!adminSnap.exists) throw new HttpsError('permission-denied', 'Yetkisiz');
+    return { isAdmin: true, name: 'Admin' };
+  }
+  return { isAdmin: false, ...snap.data() };
+}
+
+/**
+ * Damga Ekle (Callable)
+ */
+exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
+  const { customerId, staffId, branchId, productCategory, isAdmin } = request.data;
+  if (!customerId || !staffId) throw new HttpsError('invalid-argument', 'customerId ve staffId gerekli');
+
+  const staff = isAdmin ? { isAdmin: true, name: 'Admin QR', branch: branchId || '' } : await verifyStaff(staffId);
+
+  // Müşteriyi getir
+  const custRef = db.collection('customers').doc(customerId);
+  const custSnap = await custRef.get();
+  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  const cust = custSnap.data();
+
+  if ((cust.currentCard || 0) >= 7) throw new HttpsError('failed-precondition', 'Kart dolu');
+
+  const nc = (cust.currentCard || 0) + 1;
+  const nt = (cust.totalStamps || 0) + 1;
+  const nl = calculateLevel(nt);
+
+  // Transaction ile güncelle
+  await db.runTransaction(async (t) => {
+    t.update(custRef, { currentCard: nc, totalStamps: nt, level: nl });
+    t.create(db.collection('stampLogs').doc(), {
+      customerId, customerName: cust.name, staffId, staffName: staff.name,
+      branchId: staff.branch || branchId || '', type: isAdmin ? 'admin_add' : 'stamp',
+      productCategory: productCategory || '', cardBefore: cust.currentCard || 0, cardAfter: nc,
+      timestamp: FieldValue.serverTimestamp(),
+    });
+  });
+
+  // Referans bonusu
+  if (nt === 1 && cust.referredBy) {
+    try {
+      const refRef = db.collection('customers').doc(cust.referredBy);
+      const refSnap = await refRef.get();
+      if (refSnap.exists) {
+        const rd = refSnap.data();
+        const rnc = (rd.currentCard || 0) < 7 ? (rd.currentCard || 0) + 1 : rd.currentCard || 0;
+        const rnt = (rd.totalStamps || 0) + 1;
+        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt) });
+        await db.collection('stampLogs').add({
+          customerId: cust.referredBy, customerName: rd.name, staffId: 'system',
+          staffName: 'Referans Bonus', branchId: '', type: 'referral_bonus',
+          cardAfter: rnc, timestamp: FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) { console.error('Referans bonus hatası:', e); }
+  }
+
+  return { success: true, currentCard: nc, totalStamps: nt, level: nl };
+});
+
+/**
+ * Sadakat Ücretsiz Kullan (Callable)
+ */
+exports.redeemFree = onCall({ region: "europe-west1" }, async (request) => {
+  const { customerId, staffId, branchId, isAdmin } = request.data;
+  if (!customerId || !staffId) throw new HttpsError('invalid-argument', 'customerId ve staffId gerekli');
+
+  if (!isAdmin) await verifyStaff(staffId);
+
+  const custRef = db.collection('customers').doc(customerId);
+  const custSnap = await custRef.get();
+  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  const cust = custSnap.data();
+
+  if ((cust.currentCard || 0) < 7) throw new HttpsError('failed-precondition', 'Kart dolmamış');
+
+  await db.runTransaction(async (t) => {
+    t.update(custRef, { currentCard: 0 });
+    t.create(db.collection('stampLogs').doc(), {
+      customerId, customerName: cust.name, staffId, staffName: isAdmin ? 'Admin' : (await db.collection('staff').doc(staffId).get()).data()?.name || staffId,
+      branchId: branchId || '', type: 'free_redeemed', timestamp: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true, currentCard: 0 };
+});
+
+/**
+ * GOAT Aylık Ücretsiz Kullan (Callable)
+ */
+exports.redeemGoatMonthly = onCall({ region: "europe-west1" }, async (request) => {
+  const { customerId, staffId, branchId, isAdmin } = request.data;
+  if (!customerId || !staffId) throw new HttpsError('invalid-argument', 'customerId ve staffId gerekli');
+
+  if (!isAdmin) await verifyStaff(staffId);
+
+  const custRef = db.collection('customers').doc(customerId);
+  const custSnap = await custRef.get();
+  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  const cust = custSnap.data();
+
+  if (cust.level !== 'goat') throw new HttpsError('failed-precondition', 'Müşteri GOAT değil');
+  if (cust.goatMonthlyUsed) throw new HttpsError('failed-precondition', 'GOAT aylık zaten kullanılmış');
+
+  await db.runTransaction(async (t) => {
+    t.update(custRef, { goatMonthlyUsed: true });
+    t.create(db.collection('stampLogs').doc(), {
+      customerId, customerName: cust.name, staffId, staffName: isAdmin ? 'Admin' : (await db.collection('staff').doc(staffId).get()).data()?.name || staffId,
+      branchId: branchId || '', type: 'goat_monthly', timestamp: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true };
+});
+
+/**
+ * Admin Damga Düzenleme (+/-) (Callable)
+ */
+exports.adminAdjustStamp = onCall({ region: "europe-west1" }, async (request) => {
+  const { customerId, action } = request.data; // action: 'add' veya 'remove'
+  if (!customerId || !action) throw new HttpsError('invalid-argument', 'customerId ve action gerekli');
+
+  const custRef = db.collection('customers').doc(customerId);
+  const custSnap = await custRef.get();
+  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  const cust = custSnap.data();
+
+  let nc = cust.currentCard || 0;
+  let nt = cust.totalStamps || 0;
+
+  if (action === 'add') {
+    if (nc >= 7) throw new HttpsError('failed-precondition', 'Kart dolu');
+    nc += 1; nt += 1;
+  } else if (action === 'remove') {
+    if (nc <= 0) throw new HttpsError('failed-precondition', 'Damga 0');
+    nc -= 1; nt = Math.max(0, nt - 1);
+  } else {
+    throw new HttpsError('invalid-argument', 'action add veya remove olmalı');
+  }
+
+  const nl = calculateLevel(nt);
+
+  await db.runTransaction(async (t) => {
+    t.update(custRef, { currentCard: nc, totalStamps: nt, level: nl });
+    t.create(db.collection('stampLogs').doc(), {
+      customerId, customerName: cust.name, staffId: 'admin', staffName: 'Admin',
+      branchId: '', type: action === 'add' ? 'admin_add' : 'admin_remove',
+      cardBefore: cust.currentCard || 0, cardAfter: nc, timestamp: FieldValue.serverTimestamp(),
+    });
+  });
+
+  return { success: true, currentCard: nc, totalStamps: nt, level: nl };
+});
 
 /**
  * Kampanya oluşturulunca otomatik push bildirim gönder

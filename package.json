@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node -e \"const fs=require('fs');const f='dist/firebase-messaging-sw.js';let s=fs.readFileSync(f,'utf8');s=s.replace('__BUILD_VERSION__',Date.now().toString(36));fs.writeFileSync(f,s);console.log('SW version injected')\"",
     "preview": "vite preview"
   },
   "dependencies": {

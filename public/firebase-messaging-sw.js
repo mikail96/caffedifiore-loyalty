@@ -2,7 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 // === CACHE (offline destek) ===
-const CACHE_NAME = 'cdf-loyalty-v1';
+const CACHE_NAME = 'cdf-loyalty-__BUILD_VERSION__';
 const STATIC_ASSETS = ['/', '/icons/logo-header.png', '/icons/icon-192.png', '/icons/icon-512.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {

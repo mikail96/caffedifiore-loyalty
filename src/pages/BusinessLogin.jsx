@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../config/firebase.js';
+import { auth, db } from '../config/firebase.js';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { COLORS, FONTS } from '../config/constants.js';
 import { hashPin } from '../utils/helpers.js';
@@ -9,6 +10,7 @@ import { hashPin } from '../utils/helpers.js';
 const f = FONTS;
 const MAX_ATTEMPTS = 5;
 const LOCK_MINUTES = 15;
+const ADMIN_EMAIL_DOMAIN = 'caffedifiore-loyalty.firebaseapp.com';
 
 export default function BusinessLogin() {
   const navigate = useNavigate();
@@ -95,35 +97,61 @@ export default function BusinessLogin() {
     const lockMsg = await checkBruteForce('admin_' + adminUser.trim());
     if (lockMsg) { setError(lockMsg); setLoading(false); return; }
 
+    const email = `${adminUser.trim().toLowerCase()}@${ADMIN_EMAIL_DOMAIN}`;
+
     try {
-      const { doc: docRef, getDoc: getDocFn } = await import('firebase/firestore');
-      const settingsDoc = await getDocFn(docRef(db, 'settings', 'admin'));
-      if (!settingsDoc.exists()) { setError('Admin ayarları bulunamadı'); setLoading(false); return; }
-      const adminData = settingsDoc.data();
-
-      if (adminUser.trim() !== adminData.username) {
-        setError('Kullanıcı adı hatalı');
-        await recordAttempt('admin_' + adminUser.trim(), false);
-        setLoading(false); return;
-      }
-
-      // Şifre kontrolü: hash karşılaştır + düz metin fallback + migration
-      const hashedPass = await hashPin(adminPass);
-      if (adminData.password === hashedPass) {
-        // Hash eşleşti
-      } else if (adminData.password === adminPass) {
-        // Düz metin eşleşti — migrate et
-        await updateDoc(doc(db, 'settings', 'admin'), { password: hashedPass });
-      } else {
-        setError('Şifre hatalı');
-        await recordAttempt('admin_' + adminUser.trim(), false);
-        setLoading(false); return;
-      }
-
+      // 1) Firebase Auth ile dene
+      await signInWithEmailAndPassword(auth, email, adminPass);
       await recordAttempt('admin_' + adminUser.trim(), true);
-      await loginAsAdmin({ ...adminData, role: 'admin' });
+      // Auth başarılı — role AuthContext'te onAuthStateChanged ile set edilecek
       navigate('/admin');
-    } catch (err) { setError('Giriş sırasında hata oluştu'); }
+    } catch (authErr) {
+      if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential') {
+        // 2) Firebase Auth'ta yok — Firestore'dan kontrol et + migrate et
+        try {
+          const settingsDoc = await getDoc(doc(db, 'settings', 'admin'));
+          if (!settingsDoc.exists()) { setError('Admin ayarları bulunamadı'); setLoading(false); return; }
+          const adminData = settingsDoc.data();
+
+          if (adminUser.trim() !== adminData.username) {
+            setError('Kullanıcı adı hatalı');
+            await recordAttempt('admin_' + adminUser.trim(), false);
+            setLoading(false); return;
+          }
+
+          // Şifre kontrolü: hash + düz metin fallback
+          const hashedPass = await hashPin(adminPass);
+          if (adminData.password !== hashedPass && adminData.password !== adminPass) {
+            setError('Şifre hatalı');
+            await recordAttempt('admin_' + adminUser.trim(), false);
+            setLoading(false); return;
+          }
+
+          // Firestore eşleşti — Firebase Auth hesabı oluştur (otomatik migration)
+          try {
+            await createUserWithEmailAndPassword(auth, email, adminPass);
+            // Firestore'da admin email'i kaydet
+            await updateDoc(doc(db, 'settings', 'admin'), { authEmail: email, password: hashedPass });
+          } catch (createErr) {
+            // auth/email-already-in-use olabilir — şifre yanlıştı demek
+            if (createErr.code === 'auth/email-already-in-use') {
+              setError('Şifre hatalı');
+              await recordAttempt('admin_' + adminUser.trim(), false);
+              setLoading(false); return;
+            }
+            // Diğer hatalar — migration başarısız ama Firestore ile devam et
+            console.warn('Auth migration failed:', createErr.code);
+          }
+
+          await recordAttempt('admin_' + adminUser.trim(), true);
+          await loginAsAdmin({ ...adminData, role: 'admin' });
+          navigate('/admin');
+        } catch (fsErr) { setError('Giriş sırasında hata oluştu'); }
+      } else {
+        setError(authErr.code === 'auth/too-many-requests' ? 'Çok fazla deneme. Biraz bekleyin.' : 'Şifre hatalı');
+        await recordAttempt('admin_' + adminUser.trim(), false);
+      }
+    }
     setLoading(false);
   };
 

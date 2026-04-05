@@ -14,6 +14,8 @@ export function AuthProvider({ children }) {
   const snapshotUnsub = useRef(null);
   const loginGrace = useRef(false); // Login sonrası koruma
 
+  const ADMIN_DOMAIN = 'caffedifiore-loyalty.firebaseapp.com';
+
   const loadCustomerData = async (uid) => {
     const snap = await getDoc(doc(db, 'customers', uid));
     if (snap.exists()) { setUserData(snap.data()); setRole('customer'); return true; }
@@ -25,6 +27,22 @@ export function AuthProvider({ children }) {
       if (snapshotUnsub.current) { snapshotUnsub.current(); snapshotUnsub.current = null; }
 
       if (firebaseUser) {
+        // Admin kontrolü — email domain'den tanı
+        if (firebaseUser.email?.endsWith(`@${ADMIN_DOMAIN}`)) {
+          setUser(firebaseUser);
+          // Admin ise Firestore'dan admin verilerini yükle
+          try {
+            const settingsSnap = await getDoc(doc(db, 'settings', 'admin'));
+            if (settingsSnap.exists()) {
+              setUserData({ ...settingsSnap.data(), role: 'admin' });
+              setRole('admin');
+            }
+          } catch (e) {}
+          setLoading(false);
+          return; // Admin için session listener kurma
+        }
+
+        // Müşteri akışı
         setUser(firebaseUser);
         await loadCustomerData(firebaseUser.uid);
 
