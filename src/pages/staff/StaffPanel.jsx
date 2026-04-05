@@ -42,8 +42,8 @@ export default function StaffPanel() {
 
     // Bugünkü personel istatistikleri
     if (userData?.id) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+
+
       getDocs(query(collection(db, 'stampLogs'), where('staffId', '==', userData.id)))
         .then(snap => {
           let s = 0, f = 0;
@@ -251,7 +251,7 @@ export default function StaffPanel() {
 
       {/* İstatistik */}
       <div style={{ display: 'flex', gap: 10, padding: '14px 20px' }}>
-        {[[tStamp, 'Bugün Damga', COLORS.fioreOrange], [tFree, 'Bugün Ücretsiz', COLORS.green]].map(([v, l, c]) => <div key={l} style={{ flex: 1, background: COLORS.cardBg, borderRadius: 22, padding: '16px', textAlign: 'center', border: `1px solid ${COLORS.divider}` }}><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 4 }}>{l}</div></div>)}
+        {[[tStamp, 'Verilen Damga', COLORS.fioreOrange], [tFree, 'Verilen Ücretsiz', COLORS.green]].map(([v, l, c]) => <div key={l} style={{ flex: 1, background: COLORS.cardBg, borderRadius: 22, padding: '16px', textAlign: 'center', border: `1px solid ${COLORS.divider}` }}><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 4 }}>{l}</div></div>)}
       </div>
 
       {/* GPS */}
