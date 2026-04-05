@@ -6,6 +6,7 @@ import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc,
 import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
+import { addStamp as cfAddStamp, redeemFree as cfRedeemFree, redeemGoatMonthly as cfRedeemGoat, adminAdjustStamp as cfAdjustStamp } from '../../services/stampService.js';
 import { calculateLevel, hashPin } from '../../utils/helpers.js';
 
 const f = FONTS;
@@ -97,51 +98,27 @@ export default function AdminPanel() {
   const filtered = search ? customers.filter(c => c.name?.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search)) : customers;
   const branchKeys = Object.keys(branches);
 
-  // Müşteri damga düzenle
+  // Müşteri damga düzenle — Cloud Function
   const adjustStamp = async (custId, delta) => {
     const c = customers.find(x => x.id === custId);
     if (!c) return;
-    let newCard = Math.max(0, Math.min(7, (c.currentCard || 0) + delta));
-    let newTotal = Math.max(0, (c.totalStamps || 0) + delta);
-    let nl = c.level;
-    if (newTotal >= 40 && c.level !== 'goat') nl = 'goat';
-    else if (newTotal >= 16 && newTotal < 40) nl = 'mudavim';
-    else if (newTotal < 16) nl = 'misafir';
-    await updateDoc(doc(db, 'customers', custId), { currentCard: newCard, totalStamps: newTotal, level: nl });
-    setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: newCard, totalStamps: newTotal, level: nl } : x));
-    const now = new Date();
-    const logEntry = { customerId: custId, customerName: c.name, staffId: 'admin', staffName: 'Admin', branchId: 'admin', type: delta > 0 ? 'admin_add' : 'admin_remove', cardAfter: newCard, timestamp: { seconds: now.getTime() / 1000, toDate: () => now } };
-    await addDoc(collection(db, 'stampLogs'), { ...logEntry, timestamp: serverTimestamp() });
-    setStampLogs(p => [logEntry, ...p]);
-
-    // Referans bonus: İlk damgada referans sahibine +1 damga
-    if (delta > 0 && newTotal === 1 && c.referredBy) {
-      try {
-        const refDoc = await getDoc(doc(db, 'customers', c.referredBy));
-        if (refDoc.exists()) {
-          const rd = refDoc.data();
-          const rnc = (rd.currentCard || 0) + 1 > 7 ? rd.currentCard || 0 : (rd.currentCard || 0) + 1;
-          const rnt = (rd.totalStamps || 0) + 1;
-          let rnl = rd.level;
-          if (rnt >= 40 && rd.level !== 'goat') rnl = 'goat';
-          else if (rnt >= 16 && rd.level === 'misafir') rnl = 'mudavim';
-          await updateDoc(doc(db, 'customers', c.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
-          setCustomers(p => p.map(x => x.id === c.referredBy ? { ...x, currentCard: rnc, totalStamps: rnt, level: rnl } : x));
-          await addDoc(collection(db, 'stampLogs'), { customerId: c.referredBy, customerName: rd.name, staffId: 'admin', staffName: 'Referans Bonus', branchId: 'admin', type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
-          msg(`${rd.name} referans bonusu aldı!`);
-        }
-      } catch (e) { console.error('Referans bonus hatası:', e); }
-    }
-
-    msg(`${c.name}: ${delta > 0 ? '+1 damga' : '-1 damga'} → ${newCard}/7 (toplam: ${newTotal})`);
+    try {
+      const result = await cfAdjustStamp({ customerId: custId, action: delta > 0 ? 'add' : 'remove' });
+      setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: result.currentCard, totalStamps: result.totalStamps, level: result.level } : x));
+      const now = new Date();
+      setStampLogs(p => [{ customerId: custId, customerName: c.name, type: delta > 0 ? 'admin_add' : 'admin_remove', cardAfter: result.currentCard, timestamp: { seconds: now.getTime() / 1000, toDate: () => now } }, ...p]);
+      msg(`${c.name}: ${delta > 0 ? '+1 damga' : '-1 damga'} → ${result.currentCard}/7 (toplam: ${result.totalStamps})`);
+    } catch (e) { msg(e?.message || 'Hata!', 'error'); }
   };
 
   const resetCard = async (custId) => {
     const c = customers.find(x => x.id === custId);
-    if (!c) return;
-    await updateDoc(doc(db, 'customers', custId), { currentCard: 0 });
-    setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: 0 } : x));
-    msg(`${c.name} kartı sıfırlandı (0/7)`);
+    if (!c || (c.currentCard || 0) < 7) return;
+    try {
+      await cfRedeemFree({ customerId: custId, staffId: 'admin', branchId: 'admin', isAdmin: true });
+      setCustomers(p => p.map(x => x.id === custId ? { ...x, currentCard: 0 } : x));
+      msg(`${c.name} ücretsiz verildi, kart sıfırlandı (0/7)`);
+    } catch (e) { msg(e?.message || 'Hata!', 'error'); }
   };
 
   return (
@@ -258,19 +235,21 @@ export default function AdminPanel() {
                 <Bt onClick={async () => {
                   if ((qrSel.currentCard||0) < 7 || qrBusy) return;
                   setQrBusy(true);
-                  await updateDoc(doc(db, 'customers', qrSel.id), { currentCard: 0 });
-                  await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.id, customerName: qrSel.name, staffId: 'admin', staffName: 'Admin QR', branchId: 'admin', type: 'free_redeemed', timestamp: serverTimestamp() });
-                  setQrSel({ ...qrSel, currentCard: 0 });
-                  msg('Sadakat ücretsiz verildi! Kart 0/7');
+                  try {
+                    await cfRedeemFree({ customerId: qrSel.id, staffId: 'admin', branchId: 'admin', isAdmin: true });
+                    setQrSel({ ...qrSel, currentCard: 0 });
+                    msg('Sadakat ücretsiz verildi! Kart 0/7');
+                  } catch (e) { msg(e?.message || 'Hata!', 'error'); }
                   setQrBusy(false);
                 }} disabled={(qrSel.currentCard||0) < 7} color={COLORS.green}>Sadakat Ücretsiz</Bt>
                 {qrSel.level === 'goat' && <Bt onClick={async () => {
                   if (qrSel.goatMonthlyUsed || qrBusy) return;
                   setQrBusy(true);
-                  await updateDoc(doc(db, 'customers', qrSel.id), { goatMonthlyUsed: true });
-                  await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.id, customerName: qrSel.name, staffId: 'admin', staffName: 'Admin QR', branchId: 'admin', type: 'goat_monthly', timestamp: serverTimestamp() });
-                  setQrSel({ ...qrSel, goatMonthlyUsed: true });
-                  msg('GOAT aylık ücretsiz verildi!');
+                  try {
+                    await cfRedeemGoat({ customerId: qrSel.id, staffId: 'admin', branchId: 'admin', isAdmin: true });
+                    setQrSel({ ...qrSel, goatMonthlyUsed: true });
+                    msg('GOAT aylık ücretsiz verildi!');
+                  } catch (e) { msg(e?.message || 'Hata!', 'error'); }
                   setQrBusy(false);
                 }} disabled={qrSel.goatMonthlyUsed} color={COLORS.gold}>GOAT Aylık Ücretsiz</Bt>}
               </div>
@@ -295,30 +274,11 @@ export default function AdminPanel() {
               <Bt onClick={async () => {
                 if (qrBusy) return;
                 setQrBusy(true);
-                const nc = (qrSel.currentCard||0)+1, nt = (qrSel.totalStamps||0)+1;
-                let nl = qrSel.level;
-                if (nt >= 40 && qrSel.level !== 'goat') nl = 'goat';
-                else if (nt >= 16 && qrSel.level === 'misafir') nl = 'mudavim';
-                await updateDoc(doc(db, 'customers', qrSel.id), { currentCard: nc, totalStamps: nt, level: nl });
-                await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.id, customerName: qrSel.name, staffId: 'admin', staffName: 'Admin QR', branchId: 'admin', type: 'stamp', productCategory: qrCat, cardBefore: qrSel.currentCard||0, cardAfter: nc, timestamp: serverTimestamp() });
-                // Referans bonus
-                if (nt === 1 && qrSel.referredBy) {
-                  try {
-                    const refDoc = await getDoc(doc(db, 'customers', qrSel.referredBy));
-                    if (refDoc.exists()) {
-                      const rd = refDoc.data();
-                      const rnc = (rd.currentCard||0)+1 > 7 ? rd.currentCard||0 : (rd.currentCard||0)+1;
-                      const rnt = (rd.totalStamps||0)+1;
-                      let rnl = rd.level;
-                      if (rnt >= 40 && rd.level !== 'goat') rnl = 'goat';
-                      else if (rnt >= 16 && rd.level === 'misafir') rnl = 'mudavim';
-                      await updateDoc(doc(db, 'customers', qrSel.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
-                      await addDoc(collection(db, 'stampLogs'), { customerId: qrSel.referredBy, customerName: rd.name, staffId: 'admin', staffName: 'Referans Bonus', branchId: 'admin', type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
-                    }
-                  } catch(e) {}
-                }
-                setQrSel({ ...qrSel, currentCard: nc, totalStamps: nt, level: nl });
-                msg(`Damga: ${qrSel.name} ${nc}/7`);
+                try {
+                  const result = await cfAddStamp({ customerId: qrSel.id, staffId: 'admin', branchId: 'admin', productCategory: qrCat, isAdmin: true });
+                  setQrSel({ ...qrSel, currentCard: result.currentCard, totalStamps: result.totalStamps, level: result.level });
+                  msg(`Damga: ${qrSel.name} ${result.currentCard}/7`);
+                } catch (e) { msg(e?.message || 'Hata!', 'error'); }
                 setQrStep(null); setQrCat(null);
                 setQrBusy(false);
               }} color={COLORS.green}>Onayla</Bt>

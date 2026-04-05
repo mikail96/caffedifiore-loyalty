@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
+import { addStamp, redeemFree, redeemGoatMonthly } from '../../services/stampService.js';
 import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { calculateDistance } from '../../utils/helpers.js';
 
@@ -146,56 +147,23 @@ export default function StaffPanel() {
     msg(custDoc.data().name + ' bulundu!');
   };
 
-  // Damga ekle
+  // Damga ekle — Cloud Function
   const doStamp = async () => {
     if (!sel || !gps || (sel.currentCard || 0) >= 7 || busy) return;
     setBusy(true);
     try {
-      const recentQuery = query(collection(db, 'stampLogs'), where('customerId', '==', sel.id), where('type', '==', 'stamp'));
-      const recentSnap = await getDocs(recentQuery);
-      if (!recentSnap.empty) {
-        let lastTime = 0;
-        recentSnap.docs.forEach(d => { const t = d.data().timestamp?.toDate?.()?.getTime() || 0; if (t > lastTime) lastTime = t; });
-        if (lastTime > 0) {
-          const diffMin = (Date.now() - lastTime) / 60000;
-          if (diffMin < STAMP_CONFIG.minStampIntervalMinutes) {
-            msg(`⏱ Son damgadan ${Math.ceil(STAMP_CONFIG.minStampIntervalMinutes - diffMin)} dk beklenmeli!`, 'error');
-            setBusy(false); return;
-          }
-        }
-      }
-      const nc = (sel.currentCard || 0) + 1, nt = (sel.totalStamps || 0) + 1;
-      let nl = sel.level;
-      if (nt >= 40 && sel.level !== 'goat') nl = 'goat';
-      else if (nt >= 16 && sel.level === 'misafir') nl = 'mudavim';
-      await updateDoc(doc(db, 'customers', sel.id), { currentCard: nc, totalStamps: nt, level: nl });
-      await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'stamp', productCategory: cat, cardBefore: sel.currentCard || 0, cardAfter: nc, timestamp: serverTimestamp() });
-
-      // Referans bonus: İlk damgada referans sahibine +1 damga
-      if (nt === 1 && sel.referredBy) {
-        try {
-          const refDoc = await getDoc(doc(db, 'customers', sel.referredBy));
-          if (refDoc.exists()) {
-            const rd = refDoc.data();
-            const rnc = (rd.currentCard || 0) + 1 > 7 ? rd.currentCard || 0 : (rd.currentCard || 0) + 1;
-            const rnt = (rd.totalStamps || 0) + 1;
-            let rnl = rd.level;
-            if (rnt >= 40 && rd.level !== 'goat') rnl = 'goat';
-            else if (rnt >= 16 && rd.level === 'misafir') rnl = 'mudavim';
-            await updateDoc(doc(db, 'customers', sel.referredBy), { currentCard: rnc, totalStamps: rnt, level: rnl });
-            await addDoc(collection(db, 'stampLogs'), { customerId: sel.referredBy, customerName: rd.name, staffId: 'system', staffName: 'Referans Bonus', branchId: userData.branch, type: 'referral_bonus', cardAfter: rnc, timestamp: serverTimestamp() });
-          }
-        } catch (e) { console.error('Referans bonus hatası:', e); }
-      }
-
-      const updated = { ...sel, currentCard: nc, totalStamps: nt, level: nl };
+      const result = await addStamp({ customerId: sel.id, staffId: userData.id, branchId: userData.branch, productCategory: cat });
+      const updated = { ...sel, currentCard: result.currentCard, totalStamps: result.totalStamps, level: result.level };
       setSel(updated);
       setTStamp(p => p + 1);
       setLogs(p => [{ cn: sel.name, type: 'stamp', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }), cat }, ...p]);
-      msg(`Damga: ${sel.name} ${nc}/7`);
-      if (nl !== sel.level) setTimeout(() => msg(`🎉 ${sel.name} ${nl.toUpperCase()} oldu!`, 'warning'), 1500);
+      msg(`Damga: ${sel.name} ${result.currentCard}/7`);
+      if (result.level !== sel.level) setTimeout(() => msg(`🎉 ${sel.name} ${result.level.toUpperCase()} oldu!`, 'warning'), 1500);
       setStep(null); setCat(null);
-    } catch (e) { msg('Hata!', 'error'); }
+    } catch (e) {
+      const errMsg = e?.message || 'Hata!';
+      msg(errMsg.includes('beklenmeli') ? `⏱ ${errMsg}` : errMsg, 'error');
+    }
     setBusy(false);
   };
 
@@ -203,12 +171,11 @@ export default function StaffPanel() {
     if (!sel || (sel.currentCard || 0) < 7 || busy) return;
     setBusy(true);
     try {
-      await updateDoc(doc(db, 'customers', sel.id), { currentCard: 0 });
-      await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'free_redeemed', timestamp: serverTimestamp() });
+      await redeemFree({ customerId: sel.id, staffId: userData.id, branchId: userData.branch });
       setSel({ ...sel, currentCard: 0 }); setTFree(p => p + 1);
       setLogs(p => [{ cn: sel.name, type: 'free', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
       msg('Ücretsiz verildi! Kart 0/7');
-    } catch (e) { msg('Hata!', 'error'); }
+    } catch (e) { msg(e?.message || 'Hata!', 'error'); }
     setBusy(false);
   };
 
@@ -216,12 +183,11 @@ export default function StaffPanel() {
     if (!sel || sel.level !== 'goat' || sel.goatMonthlyUsed || busy) return;
     setBusy(true);
     try {
-      await updateDoc(doc(db, 'customers', sel.id), { goatMonthlyUsed: true });
-      await addDoc(collection(db, 'stampLogs'), { customerId: sel.id, customerName: sel.name, staffId: userData.id, staffName: userData.name, branchId: userData.branch, type: 'goat_monthly', timestamp: serverTimestamp() });
+      await redeemGoatMonthly({ customerId: sel.id, staffId: userData.id, branchId: userData.branch });
       setSel({ ...sel, goatMonthlyUsed: true });
       setLogs(p => [{ cn: sel.name, type: 'goat', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
       msg('GOAT aylık ücretsiz verildi!');
-    } catch (e) { msg('Hata!', 'error'); }
+    } catch (e) { msg(e?.message || 'Hata!', 'error'); }
     setBusy(false);
   };
 

@@ -9,10 +9,14 @@ initializeApp();
 const db = getFirestore();
 const messaging = getMessaging();
 
-// Seviye hesaplama (frontend ile aynı mantık)
+// Seviye hesaplama (frontend ile aynı: constants.js STAMP_CONFIG)
+const GOAT_THRESHOLD = 40;
+const MUDAVIM_THRESHOLD = 16;
+const MIN_STAMP_INTERVAL_MS = 15 * 60 * 1000; // 15 dakika
+
 function calculateLevel(totalStamps) {
-  if (totalStamps >= 200) return 'goat';
-  if (totalStamps >= 50) return 'mudavim';
+  if (totalStamps >= GOAT_THRESHOLD) return 'goat';
+  if (totalStamps >= MUDAVIM_THRESHOLD) return 'mudavim';
   return 'misafir';
 }
 
@@ -45,6 +49,20 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
   const cust = custSnap.data();
 
   if ((cust.currentCard || 0) >= 7) throw new HttpsError('failed-precondition', 'Kart dolu');
+
+  // Minimum damga aralığı kontrolü (15dk)
+  if (!isAdmin) {
+    const recentSnap = await db.collection('stampLogs')
+      .where('customerId', '==', customerId).where('type', '==', 'stamp')
+      .orderBy('timestamp', 'desc').limit(1).get();
+    if (!recentSnap.empty) {
+      const lastTime = recentSnap.docs[0].data().timestamp?.toDate?.()?.getTime() || 0;
+      if (lastTime > 0 && (Date.now() - lastTime) < MIN_STAMP_INTERVAL_MS) {
+        const remaining = Math.ceil((MIN_STAMP_INTERVAL_MS - (Date.now() - lastTime)) / 60000);
+        throw new HttpsError('failed-precondition', `Son damgadan ${remaining} dk beklenmeli`);
+      }
+    }
+  }
 
   const nc = (cust.currentCard || 0) + 1;
   const nt = (cust.totalStamps || 0) + 1;
