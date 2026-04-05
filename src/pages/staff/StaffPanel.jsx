@@ -34,11 +34,31 @@ export default function StaffPanel() {
   const branchName = userData?.branch === 'gokkusagi' ? 'Gökkuşağı AVM' : 'Forum Kampüs AVM';
   const msg = (m, t = 'success') => { setToast(m); setTt(t); setTimeout(() => setToast(null), 2500); };
 
-  // Kampanyaları yükle
+  // Kampanyaları yükle + bugünkü istatistikleri çek
   useEffect(() => {
     getDocs(query(collection(db, 'campaigns'), where('active', '==', true)))
       .then(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
       .catch(() => {});
+
+    // Bugünkü personel istatistikleri
+    if (userData?.id) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      getDocs(query(collection(db, 'stampLogs'), where('staffId', '==', userData.id)))
+        .then(snap => {
+          let s = 0, f = 0;
+          snap.docs.forEach(d => {
+            const data = d.data();
+            const ts = data.timestamp?.toDate?.() || (data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000) : null);
+            if (!ts || ts < today) return;
+            if (data.type === 'stamp') s++;
+            else if (data.type === 'free_redeemed' || data.type === 'goat_monthly') f++;
+          });
+          setTStamp(s);
+          setTFree(f);
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // GPS kontrolü
@@ -231,7 +251,7 @@ export default function StaffPanel() {
 
       {/* İstatistik */}
       <div style={{ display: 'flex', gap: 10, padding: '14px 20px' }}>
-        {[[tStamp, 'Damga', COLORS.fioreOrange], [tFree, 'Ücretsiz', COLORS.green]].map(([v, l, c]) => <div key={l} style={{ flex: 1, background: COLORS.cardBg, borderRadius: 22, padding: '16px', textAlign: 'center', border: `1px solid ${COLORS.divider}` }}><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 4 }}>{l}</div></div>)}
+        {[[tStamp, 'Bugün Damga', COLORS.fioreOrange], [tFree, 'Bugün Ücretsiz', COLORS.green]].map(([v, l, c]) => <div key={l} style={{ flex: 1, background: COLORS.cardBg, borderRadius: 22, padding: '16px', textAlign: 'center', border: `1px solid ${COLORS.divider}` }}><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 4 }}>{l}</div></div>)}
       </div>
 
       {/* GPS */}
