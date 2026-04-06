@@ -40,3 +40,12 @@ export async function adminAdjustStamp({ customerId, action }) {
   const result = await adminAdjustStampFn({ customerId, action });
   return result.data;
 }
+
+/**
+ * Müşteri sil (Firestore + Firebase Auth)
+ */
+const deleteCustomerFn = httpsCallable(functions, 'deleteCustomer');
+export async function deleteCustomer({ customerId }) {
+  const result = await deleteCustomerFn({ customerId });
+  return result.data;
+}

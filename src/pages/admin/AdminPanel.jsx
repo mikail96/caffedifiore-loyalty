@@ -6,7 +6,7 @@ import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc,
 import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
-import { addStamp as cfAddStamp, redeemFree as cfRedeemFree, redeemGoatMonthly as cfRedeemGoat, adminAdjustStamp as cfAdjustStamp } from '../../services/stampService.js';
+import { addStamp as cfAddStamp, redeemFree as cfRedeemFree, redeemGoatMonthly as cfRedeemGoat, adminAdjustStamp as cfAdjustStamp, deleteCustomer as cfDeleteCustomer } from '../../services/stampService.js';
 import { calculateLevel, hashPin } from '../../utils/helpers.js';
 
 const f = FONTS;
@@ -324,7 +324,7 @@ export default function AdminPanel() {
             <Bt onClick={() => { resetCard(c.id); setEditingCust(null); }} color={COLORS.gray} sm>Kartı Sıfırla (0/7)</Bt>
             {c.level === 'goat' && <div style={{ marginTop: 6 }}><Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>GOAT Aylık Sıfırla</Bt></div>}
             <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.divider}`, paddingTop: 10 }}>
-              <Bt onClick={async () => { await deleteDoc(doc(db, 'customers', c.id)); setCustomers(p => p.filter(x => x.id !== c.id)); setEditingCust(null); msg(`${c.name} silindi`); }} color={COLORS.red} sm>Müşteriyi Sil</Bt>
+              <Bt onClick={async () => { try { await cfDeleteCustomer({ customerId: c.id }); setCustomers(p => p.filter(x => x.id !== c.id)); setEditingCust(null); msg(`${c.name} silindi`); } catch(e) { msg(e?.message || 'Silme hatası', 'error'); } }} color={COLORS.red} sm>Müşteriyi Sil</Bt>
             </div>
           </div>}
         </C>)}

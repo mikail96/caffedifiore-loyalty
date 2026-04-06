@@ -4,10 +4,12 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
+const { getAuth } = require("firebase-admin/auth");
 
 initializeApp();
 const db = getFirestore();
 const messaging = getMessaging();
+const adminAuth = getAuth();
 
 // Seviye hesaplama (frontend ile aynı: constants.js STAMP_CONFIG)
 const GOAT_THRESHOLD = 40;
@@ -379,3 +381,39 @@ exports.cleanupOldLogs = onSchedule(
     }
   }
 );
+
+/**
+ * Müşteri Sil — Firestore + Firebase Auth (Callable)
+ */
+exports.deleteCustomer = onCall({ region: "europe-west1" }, async (request) => {
+  const { customerId } = request.data;
+  if (!customerId) throw new HttpsError('invalid-argument', 'customerId gerekli');
+
+  // Firestore'dan müşteri verisini al
+  const custRef = db.collection('customers').doc(customerId);
+  const custSnap = await custRef.get();
+  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+
+  // Firebase Auth'tan sil (customerId = Auth uid)
+  try {
+    await adminAuth.deleteUser(customerId);
+  } catch (e) {
+    // Auth'ta yoksa sorun değil, devam et
+    if (e.code !== 'auth/user-not-found') {
+      console.error('Auth silme hatası:', e.code);
+    }
+  }
+
+  // Firestore'dan sil
+  await custRef.delete();
+
+  // İlgili stamp loglarını da sil (opsiyonel temizlik)
+  const logsSnap = await db.collection('stampLogs').where('customerId', '==', customerId).get();
+  if (!logsSnap.empty) {
+    const batch = db.batch();
+    logsSnap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  return { success: true };
+});
