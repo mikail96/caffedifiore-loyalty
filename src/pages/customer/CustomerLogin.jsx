@@ -87,9 +87,17 @@ export default function CustomerLogin() {
     if (password.length < 6) { setError('Şifre en az 6 karakter olmalı'); return; }
     setLoading(true); setError('');
     try {
+      // Telefon numarası mükerrer kontrolü
+      const phoneFormatted = '+90' + (clean.startsWith('0') ? clean.slice(1) : clean);
+      const phoneQuery = query(collection(db, 'customers'), where('phone', '==', phoneFormatted));
+      const phoneSnap = await getDocs(phoneQuery);
+      if (!phoneSnap.empty) {
+        setError('Bu telefon numarası zaten kayıtlı.');
+        setLoading(false); return;
+      }
+
       const cred = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       const uid = cred.user.uid;
-      const phoneFormatted = '+90' + (clean.startsWith('0') ? clean.slice(1) : clean);
 
       // Referans kodu oluştur
       const refCode = name.trim().toUpperCase().replace(/\s/g, '').slice(0, 5) +
