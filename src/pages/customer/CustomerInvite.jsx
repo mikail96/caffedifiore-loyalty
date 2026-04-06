@@ -43,7 +43,7 @@ export default function CustomerInvite() {
         <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}` }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>Davet İstatistiğin</div>
           <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-            {[[userData.referralCount||0,'Kayıt Oldu',COLORS.fioreOrange],[0,'Bonus Damga',COLORS.green]].map(([v,l,c])=>(
+            {[[userData.referralCount||0,'Kayıt Oldu',COLORS.fioreOrange],[userData.referralBonusCount||0,'Bonus Damga',COLORS.green]].map(([v,l,c])=>(
               <div key={l} style={{ textAlign: 'center' }}><div style={{ fontSize: 28, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, marginTop: 2 }}>{l}</div></div>
             ))}
           </div>

@@ -90,7 +90,7 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
         const rd = refSnap.data();
         const rnc = (rd.currentCard || 0) < 7 ? (rd.currentCard || 0) + 1 : rd.currentCard || 0;
         const rnt = (rd.totalStamps || 0) + 1;
-        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt) });
+        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt), referralBonusCount: FieldValue.increment(1) });
         await db.collection('stampLogs').add({
           customerId: cust.referredBy, customerName: rd.name, staffId: 'system',
           staffName: 'Referans Bonus', branchId: '', type: 'referral_bonus',
