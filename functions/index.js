@@ -194,6 +194,25 @@ exports.adminAdjustStamp = onCall({ region: "europe-west1" }, async (request) =>
     });
   });
 
+  // Referans bonus: İlk damgada referans sahibine +1 damga
+  if (action === 'add' && nt === 1 && cust.referredBy) {
+    try {
+      const refRef = db.collection('customers').doc(cust.referredBy);
+      const refSnap = await refRef.get();
+      if (refSnap.exists) {
+        const rd = refSnap.data();
+        const rnc = (rd.currentCard || 0) < 7 ? (rd.currentCard || 0) + 1 : rd.currentCard || 0;
+        const rnt = (rd.totalStamps || 0) + 1;
+        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt), referralBonusCount: FieldValue.increment(1) });
+        await db.collection('stampLogs').add({
+          customerId: cust.referredBy, customerName: rd.name, staffId: 'system',
+          staffName: 'Referans Bonus', branchId: '', type: 'referral_bonus',
+          cardAfter: rnc, timestamp: FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) { console.error('Referans bonus hatası:', e); }
+  }
+
   return { success: true, currentCard: nc, totalStamps: nt, level: nl };
 });
 
