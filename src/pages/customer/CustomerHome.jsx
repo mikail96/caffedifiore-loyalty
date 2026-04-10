@@ -147,8 +147,8 @@ export default function CustomerHome() {
         <Card style={{ textAlign: 'center' }}>
           {isGoat && <div style={{ background: COLORS.goldBg, borderRadius: 10, padding: '8px 12px', marginBottom: 10, borderLeft: `3px solid ${COLORS.gold}` }}><span style={{ fontSize: 11, fontWeight: 600, color: COLORS.gold }}>Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz</span></div>}
           <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>Kasada QR Göster</div>
-          <div style={{ display: 'inline-block', padding: 8, borderRadius: 14, background: '#fff' }}>
-            <QRCodeSVG value={qrToken} size={90} level="M" fgColor="#000" bgColor="#fff" />
+          <div style={{ display: 'inline-block', padding: 12, borderRadius: 14, background: '#fff' }}>
+            <QRCodeSVG value={qrToken} size={160} level="H" fgColor="#000" bgColor="#fff" />
           </div>
           {isGoat && <div style={{ marginTop: 8 }}><span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: COLORS.gold, padding: '4px 14px', borderRadius: 20 }}>GOAT · %10 İNDİRİM</span></div>}
           <div style={{ marginTop: 8, fontSize: 10, color: COLORS.gray }}>{qrTimer}s sonra yenilenir</div>

@@ -49,18 +49,24 @@ export default function CustomerLogin() {
     if (clean.length !== 10) { setError('Telefon numarası 10 haneli olmalıdır'); return; }
     if (password.length < 4) { setError('Şifrenizi girin'); return; }
     setLoading(true); setError('');
+
+    // 15 saniye timeout — yavaş ağda sonsuz beklemeyi önle
+    const timeout = setTimeout(() => { setLoading(false); setError('Bağlantı zaman aşımına uğradı. Tekrar deneyin.'); }, 15000);
+
     let customerEmail = null;
     try {
       customerEmail = await findEmailByPhone(phone);
-      if (!customerEmail) { setError('Bu numarayla hesap bulunamadı. Kayıt olun.'); setLoading(false); return; }
+      if (!customerEmail) { clearTimeout(timeout); setError('Bu numarayla hesap bulunamadı. Kayıt olun.'); setLoading(false); return; }
       await signInWithEmailAndPassword(auth, customerEmail, password);
-      setLoginAttempts(0); // Başarılı — sayacı sıfırla
+      setLoginAttempts(0);
       const sid = Date.now().toString(36) + Math.random().toString(36).slice(2);
-      await updateDoc(doc(db, 'customers', auth.currentUser.uid), { sessionId: sid });
+      try { await updateDoc(doc(db, 'customers', auth.currentUser.uid), { sessionId: sid }); } catch(e) {}
       sessionStorage.setItem('cdf_session', sid);
       await refreshUser();
+      clearTimeout(timeout);
       navigate('/musteri');
     } catch (err) {
+      clearTimeout(timeout);
       const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
       if (newAttempts >= 5) {
@@ -71,6 +77,8 @@ export default function CustomerLogin() {
         setError(`Şifre hatalı. (${5 - newAttempts} deneme hakkınız kaldı)`);
       } else if (err.code === 'auth/too-many-requests') {
         setError('Çok fazla deneme. Biraz bekleyin.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('İnternet bağlantınızı kontrol edin.');
       } else {
         setError('Giriş hatası. Bilgilerinizi kontrol edin.');
       }
