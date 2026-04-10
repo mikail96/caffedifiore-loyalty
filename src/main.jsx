@@ -18,6 +18,8 @@ style.textContent = `
     caret-color: #F5F0EB;
   }
   input:focus, textarea:focus { outline: none; }
+  canvas { color-scheme: light !important; filter: none !important; -webkit-filter: none !important; mix-blend-mode: normal !important; }
+  [data-qr] { color-scheme: light !important; forced-color-adjust: none !important; }
 `;
 document.head.appendChild(style);
 
