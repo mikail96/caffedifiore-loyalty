@@ -322,7 +322,17 @@ export default function AdminPanel() {
               <div style={{ flex: 1 }}><Bt onClick={() => adjustStamp(c.id, -1)} color={COLORS.red} sm disabled={(c.currentCard || 0) <= 0 || (c.totalStamps || 0) <= 0}>− Damga</Bt></div>
             </div>
             <Bt onClick={() => { resetCard(c.id); setEditingCust(null); }} color={COLORS.gray} sm>Kartı Sıfırla (0/7)</Bt>
-            {c.level === 'goat' && <div style={{ marginTop: 6 }}><Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>GOAT Aylık Sıfırla</Bt></div>}
+            <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.divider}`, paddingTop: 10 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 8 }}>Seviye Yönetimi</div>
+              {c.level !== 'goat' ? (
+                <Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { level: 'goat', goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, level: 'goat', goatMonthlyUsed: false } : x)); msg(`${c.name} GOAT yapıldı!`); }} color={COLORS.gold} sm>GOAT Yap</Bt>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>GOAT Aylık Sıfırla</Bt>
+                  <Bt onClick={async () => { const nl = (c.totalStamps || 0) >= 16 ? 'mudavim' : 'misafir'; await updateDoc(doc(db, 'customers', c.id), { level: nl }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, level: nl } : x)); msg(`${c.name} GOAT kaldırıldı → ${nl}`); }} color={COLORS.gray} sm>GOAT Kaldır</Bt>
+                </div>
+              )}
+            </div>
             <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.divider}`, paddingTop: 10 }}>
               <Bt onClick={async () => { try { await cfDeleteCustomer({ customerId: c.id }); setCustomers(p => p.filter(x => x.id !== c.id)); setEditingCust(null); msg(`${c.name} silindi`); } catch(e) { msg(e?.message || 'Silme hatası', 'error'); } }} color={COLORS.red} sm>Müşteriyi Sil</Bt>
             </div>
