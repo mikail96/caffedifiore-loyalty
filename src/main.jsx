@@ -42,7 +42,18 @@ if ('serviceWorker' in navigator) {
     }
     // Sadece Firebase messaging SW
     navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .then(reg => console.log('FCM SW registered:', reg.scope))
+      .then(reg => {
+        console.log('FCM SW registered:', reg.scope);
+        // Her 60 saniyede güncelleme kontrolü
+        setInterval(() => reg.update(), 60000);
+      })
       .catch(err => console.log('FCM SW failed:', err));
+
+    // Yeni SW aktif olunca sayfayı yenile
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'SW_UPDATED') {
+        window.location.reload();
+      }
+    });
   });
 }
