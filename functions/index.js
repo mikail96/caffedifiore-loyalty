@@ -16,7 +16,9 @@ const GOAT_THRESHOLD = 40;
 const MUDAVIM_THRESHOLD = 16;
 const MIN_STAMP_INTERVAL_MS = 15 * 60 * 1000; // 15 dakika
 
-function calculateLevel(totalStamps) {
+function calculateLevel(totalStamps, currentLevel, manualGoat) {
+  // Manuel GOAT korunur — admin tarafından verilmiş
+  if (manualGoat) return 'goat';
   if (totalStamps >= GOAT_THRESHOLD) return 'goat';
   if (totalStamps >= MUDAVIM_THRESHOLD) return 'mudavim';
   return 'misafir';
@@ -68,7 +70,7 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
 
   const nc = (cust.currentCard || 0) + 1;
   const nt = (cust.totalStamps || 0) + 1;
-  const nl = calculateLevel(nt);
+  const nl = calculateLevel(nt, cust.level, cust.manualGoat);
 
   // Transaction ile güncelle
   await db.runTransaction(async (t) => {
@@ -90,7 +92,7 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
         const rd = refSnap.data();
         const rnc = (rd.currentCard || 0) < 7 ? (rd.currentCard || 0) + 1 : rd.currentCard || 0;
         const rnt = (rd.totalStamps || 0) + 1;
-        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt), referralBonusCount: FieldValue.increment(1) });
+        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt, rd.level, rd.manualGoat), referralBonusCount: FieldValue.increment(1) });
         await db.collection('stampLogs').add({
           customerId: cust.referredBy, customerName: rd.name, staffId: 'system',
           staffName: 'Referans Bonus', branchId: '', type: 'referral_bonus',
@@ -183,7 +185,7 @@ exports.adminAdjustStamp = onCall({ region: "europe-west1" }, async (request) =>
     throw new HttpsError('invalid-argument', 'action add veya remove olmalı');
   }
 
-  const nl = calculateLevel(nt);
+  const nl = calculateLevel(nt, cust.level, cust.manualGoat);
 
   await db.runTransaction(async (t) => {
     t.update(custRef, { currentCard: nc, totalStamps: nt, level: nl });
@@ -203,7 +205,7 @@ exports.adminAdjustStamp = onCall({ region: "europe-west1" }, async (request) =>
         const rd = refSnap.data();
         const rnc = (rd.currentCard || 0) < 7 ? (rd.currentCard || 0) + 1 : rd.currentCard || 0;
         const rnt = (rd.totalStamps || 0) + 1;
-        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt), referralBonusCount: FieldValue.increment(1) });
+        await refRef.update({ currentCard: rnc, totalStamps: rnt, level: calculateLevel(rnt, rd.level, rd.manualGoat), referralBonusCount: FieldValue.increment(1) });
         await db.collection('stampLogs').add({
           customerId: cust.referredBy, customerName: rd.name, staffId: 'system',
           staffName: 'Referans Bonus', branchId: '', type: 'referral_bonus',

@@ -325,11 +325,11 @@ export default function AdminPanel() {
             <div style={{ marginTop: 10, borderTop: `1px solid ${COLORS.divider}`, paddingTop: 10 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.grayDark, marginBottom: 8 }}>Seviye Yönetimi</div>
               {c.level !== 'goat' ? (
-                <Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { level: 'goat', goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, level: 'goat', goatMonthlyUsed: false } : x)); msg(`${c.name} GOAT yapıldı!`); }} color={COLORS.gold} sm>GOAT Yap</Bt>
+                <Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { level: 'goat', goatMonthlyUsed: false, manualGoat: true }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, level: 'goat', goatMonthlyUsed: false, manualGoat: true } : x)); msg(`${c.name} GOAT yapıldı!`); }} color={COLORS.gold} sm>GOAT Yap</Bt>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <Bt onClick={async () => { await updateDoc(doc(db, 'customers', c.id), { goatMonthlyUsed: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, goatMonthlyUsed: false } : x)); msg('GOAT aylık sıfırlandı'); }} color={COLORS.gold} sm>GOAT Aylık Sıfırla</Bt>
-                  <Bt onClick={async () => { const nl = (c.totalStamps || 0) >= 16 ? 'mudavim' : 'misafir'; await updateDoc(doc(db, 'customers', c.id), { level: nl }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, level: nl } : x)); msg(`${c.name} GOAT kaldırıldı → ${nl}`); }} color={COLORS.gray} sm>GOAT Kaldır</Bt>
+                  <Bt onClick={async () => { const nl = (c.totalStamps || 0) >= 16 ? 'mudavim' : 'misafir'; await updateDoc(doc(db, 'customers', c.id), { level: nl, manualGoat: false }); setCustomers(p => p.map(x => x.id === c.id ? { ...x, level: nl, manualGoat: false } : x)); msg(`${c.name} GOAT kaldırıldı → ${nl}`); }} color={COLORS.gray} sm>GOAT Kaldır</Bt>
                 </div>
               )}
             </div>
