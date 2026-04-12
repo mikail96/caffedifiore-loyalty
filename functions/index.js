@@ -1,4 +1,4 @@
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
@@ -438,3 +438,21 @@ exports.deleteCustomer = onCall({ region: "europe-west1" }, async (request) => {
 
   return { success: true };
 });
+
+/**
+ * GÜVENLİK AĞI: manualGoat olan müşterinin seviyesi değiştirilirse geri al
+ * Bu trigger TÜM level değişikliklerini yakalar — hiçbir bug GOAT'ı düşüremez
+ */
+exports.protectManualGoat = onDocumentUpdated(
+  { document: "customers/{customerId}", region: "europe-west1" },
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // manualGoat true ama level goat değilse → geri al
+    if (after.manualGoat === true && after.level !== 'goat') {
+      console.log(`GOAT koruması: ${after.name} (${event.params.customerId}) seviyesi ${after.level} → goat'a geri alındı`);
+      await event.data.after.ref.update({ level: 'goat' });
+    }
+  }
+);
