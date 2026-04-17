@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CaffeDiFiore</string>
+    <string name="title_activity_main">CaffeDiFiore</string>
+    <string name="package_name">com.caffedifiore.loyalty</string>
+    <string name="custom_url_scheme">com.caffedifiore.loyalty</string>
+</resources>

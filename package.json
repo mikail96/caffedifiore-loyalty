@@ -9,6 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/splash-screen": "^8.0.1",
     "@vitejs/plugin-react": "^6.0.1",
     "firebase": "^12.11.0",
     "html5-qrcode": "^2.3.8",
