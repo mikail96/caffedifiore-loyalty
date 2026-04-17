@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { deleteCustomer } from '../../services/stampService.js';
 import { COLORS, FONTS } from '../../config/constants.js';
 import { maskPhone, calculateLevel } from '../../utils/helpers.js';
 
@@ -9,8 +10,10 @@ const f = FONTS;
 const InstaIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>;
 
 export default function CustomerProfile() {
-  const { userData, user } = useAuth();
+  const { userData, user, logout } = useAuth();
   const [history, setHistory] = useState([]);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -89,7 +92,7 @@ export default function CustomerProfile() {
         </div>
 
         {/* Kurallar */}
-        <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}` }}>
+        <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}`, marginBottom: 12 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 14 }}>Loyalty Kuralları</div>
           {['Damgalar arası minimum 15 dakika bekleme süresi vardır.','Kahve, blend, kokteyl ve sıcak çikolata damga kazandırır.','Çay, soğuk içecek, kutulu ürünler ve tatlılar damga kazandırmaz.','Her alışveriş tek damga hakkı verir. Aynı anda birden fazla kahve alınsa dahi tek damga eklenir.','Her müşteri damga almak için kendi hesabından QR kodunu okutmalıdır.','7 damga tamamlandığında 1 ücretsiz kahve hakkı kazanılır.','Misafir: 0–15 | Müdavim: 16–39 | GOAT: 40+','GOAT üyelere her ay dilediği bir kahve ücretsiz verilir.','GOAT üyeler tüm alışverişlerinde %10 indirim hakkına sahiptir.',...(isGoat?['Ödeme öncesi GOAT üyeliğinizi kasaya gösteriniz.']:[])].map((r,i)=>(
             <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i?`1px solid ${COLORS.divider}`:'none' }}>
@@ -97,6 +100,41 @@ export default function CustomerProfile() {
               <span style={{ fontSize: 13, color: COLORS.grayDark, fontWeight: 500, lineHeight: 1.6 }}>{r}</span>
             </div>
           ))}
+        </div>
+
+        {/* Gizlilik ve Hesap Silme */}
+        <div style={{ background: COLORS.cardBg, borderRadius: 20, padding: '18px', border: `1px solid ${COLORS.divider}`, marginBottom: 12 }}>
+          <div onClick={() => window.open('/privacy-policy.html', '_blank')} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', cursor: 'pointer' }}>
+            <span style={{ fontSize: 13, color: COLORS.grayDark }}>Gizlilik Politikası</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={COLORS.gray} strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+          <div style={{ borderTop: `1px solid ${COLORS.divider}` }}>
+            {!showDelete ? (
+              <div onClick={() => setShowDelete(true)} style={{ padding: '10px 0', cursor: 'pointer' }}>
+                <span style={{ fontSize: 13, color: COLORS.red }}>Hesabımı Sil</span>
+              </div>
+            ) : (
+              <div style={{ padding: '12px 0' }}>
+                <div style={{ fontSize: 13, color: COLORS.red, fontWeight: 600, marginBottom: 8 }}>Hesabınız ve tüm verileriniz kalıcı olarak silinecek. Bu işlem geri alınamaz.</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div onClick={async () => {
+                    if (deleting) return;
+                    setDeleting(true);
+                    try {
+                      await deleteCustomer({ customerId: user.uid });
+                      await logout();
+                    } catch (e) {
+                      setDeleting(false);
+                      setShowDelete(false);
+                    }
+                  }} style={{ flex: 1, background: COLORS.red, color: '#fff', borderRadius: 12, padding: '12px', textAlign: 'center', fontWeight: 700, fontSize: 13, cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.5 : 1 }}>
+                    {deleting ? 'Siliniyor...' : 'Evet, Hesabımı Sil'}
+                  </div>
+                  <div onClick={() => setShowDelete(false)} style={{ flex: 1, background: COLORS.warmGray, color: COLORS.grayDark, borderRadius: 12, padding: '12px', textAlign: 'center', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Vazgeç</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
