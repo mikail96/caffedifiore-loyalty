@@ -6,6 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
+    url: 'https://caffedifiore-loyalty.web.app',
+    cleartext: false,
   },
   plugins: {
     SplashScreen: {
