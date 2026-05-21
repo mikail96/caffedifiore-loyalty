@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment, query, where, orderBy, limit } from 'firebase/firestore';
 import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
@@ -67,7 +67,8 @@ export default function AdminPanel() {
     const load = async () => {
       const [custSnap, staffSnap, logSnap, brSnap, campSnap] = await Promise.all([
         getDocs(collection(db, 'customers')), getDocs(collection(db, 'staff')),
-        getDocs(collection(db, 'stampLogs')), getDocs(collection(db, 'branches')),
+        getDocs(query(collection(db, 'stampLogs'), orderBy('timestamp', 'desc'), limit(200))),
+        getDocs(collection(db, 'branches')),
         getDocs(collection(db, 'campaigns')),
       ]);
       // Menüyü ayrı yükle (ilk seferde seed eder)
@@ -140,7 +141,7 @@ export default function AdminPanel() {
       {/* ===== DASHBOARD ===== */}
       {tab === 'dash' && <div style={{ padding: '14px 16px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-          {[['Üye', customers.length, COLORS.fioreOrange], ['Damga', stampLogs.filter(l => l.type === 'stamp').length, COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type === 'free_redeemed').length, COLORS.green], ['GOAT', goatCount, COLORS.gold]].map(([l, v, c]) => <C key={l}><div style={{ width: 8, height: 8, borderRadius: '50%', background: c, marginBottom: 10 }} /><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 2 }}>{l}</div></C>)}
+          {[['Üye', customers.length, COLORS.fioreOrange], ['Damga', customers.reduce((s, c) => s + (c.totalStamps || 0), 0), COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type === 'free_redeemed').length, COLORS.green], ['GOAT', goatCount, COLORS.gold]].map(([l, v, c]) => <C key={l}><div style={{ width: 8, height: 8, borderRadius: '50%', background: c, marginBottom: 10 }} /><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 2 }}>{l}</div></C>)}
         </div>
         <C><div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>En İyiler</div>
           {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}><div style={{ width: 28, height: 28, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange }}>{c.name?.charAt(0)}</div><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
