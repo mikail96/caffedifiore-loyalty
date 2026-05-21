@@ -399,6 +399,16 @@ export default function AdminPanel() {
                 <div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>{st.name}</div><div style={{ fontSize: 12, color: COLORS.blue }}>@{st.username} · {st.role}</div></div>
                 <B text={st.status === 'active' ? 'Aktif' : 'Pasif'} color={st.status === 'active' ? COLORS.green : COLORS.gray} />
               </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                <div style={{ flex: 1, background: COLORS.warmGray, borderRadius: 12, padding: '10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.fioreOrange }}>{st.totalStamps || 0}</div>
+                  <div style={{ fontSize: 10, color: COLORS.grayDark, marginTop: 2 }}>Damga</div>
+                </div>
+                <div style={{ flex: 1, background: COLORS.warmGray, borderRadius: 12, padding: '10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.green }}>{st.totalFree || 0}</div>
+                  <div style={{ fontSize: 10, color: COLORS.grayDark, marginTop: 2 }}>Ücretsiz</div>
+                </div>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: `1px solid ${COLORS.grayLight}` }}>
                 <div style={{ fontSize: 12, color: COLORS.grayDark }}>PIN: <span style={{ fontWeight: 700, background: COLORS.warmGray, color: COLORS.fioreBeyaz, padding: '3px 10px', borderRadius: 6, letterSpacing: 3 }}>{st.pin.length > 4 ? '••••' : st.pin}</span></div>
                 <div style={{ display: 'flex', gap: 12 }}>
