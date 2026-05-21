@@ -6,7 +6,7 @@ import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc,
 import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
-import { addStamp as cfAddStamp, redeemFree as cfRedeemFree, redeemGoatMonthly as cfRedeemGoat, adminAdjustStamp as cfAdjustStamp, deleteCustomer as cfDeleteCustomer, migrateStaffStats } from '../../services/stampService.js';
+import { addStamp as cfAddStamp, redeemFree as cfRedeemFree, redeemGoatMonthly as cfRedeemGoat, adminAdjustStamp as cfAdjustStamp, deleteCustomer as cfDeleteCustomer } from '../../services/stampService.js';
 import { calculateLevel, hashPin } from '../../utils/helpers.js';
 
 const f = FONTS;
@@ -152,7 +152,6 @@ export default function AdminPanel() {
             <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>Admin Ayarları</div>
             {!adminEdit && <div onClick={async () => { const snap = await getDocs(collection(db, 'settings')); const ad = snap.docs.find(d => d.id === 'admin'); if (ad) { const d = ad.data(); setAdminForm({ username: d.username || '', password: d.password || '', phone: d.phone || '' }); setAdminEdit(true); } }} style={{ fontSize: 12, color: COLORS.blue, fontWeight: 700, cursor: 'pointer', background: COLORS.blueBg, padding: '5px 12px', borderRadius: 8 }}>Düzenle</div>}
           </div>
-          <div style={{ marginTop: 10 }}><Bt onClick={async () => { msg('Personel istatistikleri güncelleniyor...'); try { const r = await migrateStaffStats(); msg(`Tamamlandı! ${r.migrated?.length || 0} personel güncellendi`); } catch(e) { msg(e?.message || 'Hata', 'error'); } }} color={COLORS.blue} sm>Personel İstatistiklerini Güncelle</Bt></div>
           {adminEdit && <div>
             <Inp label="Kullanıcı Adı" value={adminForm.username} onChange={v => setAdminForm(p => ({ ...p, username: v }))} />
             <Inp label="Şifre" value={adminForm.password} onChange={v => setAdminForm(p => ({ ...p, password: v }))} />
