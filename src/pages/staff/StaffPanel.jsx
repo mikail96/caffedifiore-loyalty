@@ -41,18 +41,15 @@ export default function StaffPanel() {
       .then(snap => setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
       .catch(() => {});
 
-    // Bugünkü personel istatistikleri
+    // Personel istatistikleri — staff dokümanından oku (tek doküman, hızlı)
     if (userData?.id) {
-      getDocs(query(collection(db, 'stampLogs'), where('staffId', '==', userData.id)))
+      getDoc(doc(db, 'staff', userData.id))
         .then(snap => {
-          let s = 0, f = 0;
-          snap.docs.forEach(d => {
-            const data = d.data();
-            if (data.type === 'stamp') s++;
-            else if (data.type === 'free_redeemed' || data.type === 'goat_monthly') f++;
-          });
-          setTStamp(s);
-          setTFree(f);
+          if (snap.exists()) {
+            const data = snap.data();
+            setTStamp(data.totalStamps || 0);
+            setTFree(data.totalFree || 0);
+          }
         })
         .catch(() => {});
     }

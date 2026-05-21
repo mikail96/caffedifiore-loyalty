@@ -81,6 +81,10 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
       productCategory: productCategory || '', cardBefore: cust.currentCard || 0, cardAfter: nc,
       timestamp: FieldValue.serverTimestamp(),
     });
+    // Personel istatistik sayacı güncelle
+    if (!isAdmin && staffId) {
+      t.update(db.collection('staff').doc(staffId), { totalStamps: FieldValue.increment(1) });
+    }
   });
 
   // Referans bonusu
@@ -121,12 +125,22 @@ exports.redeemFree = onCall({ region: "europe-west1" }, async (request) => {
 
   if ((cust.currentCard || 0) < 7) throw new HttpsError('failed-precondition', 'Kart dolmamış');
 
+  // Staff name'i transaction dışında al
+  let staffName = 'Admin';
+  if (!isAdmin && staffId) {
+    const staffSnap = await db.collection('staff').doc(staffId).get();
+    staffName = staffSnap.data()?.name || staffId;
+  }
+
   await db.runTransaction(async (t) => {
     t.update(custRef, { currentCard: 0 });
     t.create(db.collection('stampLogs').doc(), {
-      customerId, customerName: cust.name, staffId, staffName: isAdmin ? 'Admin' : (await db.collection('staff').doc(staffId).get()).data()?.name || staffId,
+      customerId, customerName: cust.name, staffId, staffName,
       branchId: branchId || '', type: 'free_redeemed', timestamp: FieldValue.serverTimestamp(),
     });
+    if (!isAdmin && staffId) {
+      t.update(db.collection('staff').doc(staffId), { totalFree: FieldValue.increment(1) });
+    }
   });
 
   return { success: true, currentCard: 0 };
@@ -149,12 +163,21 @@ exports.redeemGoatMonthly = onCall({ region: "europe-west1" }, async (request) =
   if (cust.level !== 'goat') throw new HttpsError('failed-precondition', 'Müşteri GOAT değil');
   if (cust.goatMonthlyUsed) throw new HttpsError('failed-precondition', 'GOAT aylık zaten kullanılmış');
 
+  let staffName = 'Admin';
+  if (!isAdmin && staffId) {
+    const staffSnap = await db.collection('staff').doc(staffId).get();
+    staffName = staffSnap.data()?.name || staffId;
+  }
+
   await db.runTransaction(async (t) => {
     t.update(custRef, { goatMonthlyUsed: true });
     t.create(db.collection('stampLogs').doc(), {
-      customerId, customerName: cust.name, staffId, staffName: isAdmin ? 'Admin' : (await db.collection('staff').doc(staffId).get()).data()?.name || staffId,
+      customerId, customerName: cust.name, staffId, staffName,
       branchId: branchId || '', type: 'goat_monthly', timestamp: FieldValue.serverTimestamp(),
     });
+    if (!isAdmin && staffId) {
+      t.update(db.collection('staff').doc(staffId), { totalFree: FieldValue.increment(1) });
+    }
   });
 
   return { success: true };
