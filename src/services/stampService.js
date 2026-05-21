@@ -49,3 +49,12 @@ export async function deleteCustomer({ customerId }) {
   const result = await deleteCustomerFn({ customerId });
   return result.data;
 }
+
+/**
+ * Personel istatistiklerini migration (tek seferlik)
+ */
+const migrateStaffStatsFn = httpsCallable(functions, 'migrateStaffStats');
+export async function migrateStaffStats() {
+  const result = await migrateStaffStatsFn({});
+  return result.data;
+}

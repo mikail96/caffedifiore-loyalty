@@ -479,3 +479,30 @@ exports.protectManualGoat = onDocumentUpdated(
     }
   }
 );
+
+/**
+ * Personel istatistiklerini stampLogs'tan hesaplayıp staff dokümanlarına yaz (tek seferlik migration)
+ */
+exports.migrateStaffStats = onCall({ region: "europe-west1" }, async (request) => {
+  const staffSnap = await db.collection('staff').get();
+  const results = [];
+
+  for (const staffDoc of staffSnap.docs) {
+    const staffId = staffDoc.id;
+    const logsSnap = await db.collection('stampLogs').where('staffId', '==', staffId).get();
+    
+    let totalStamps = 0;
+    let totalFree = 0;
+    
+    logsSnap.docs.forEach(d => {
+      const data = d.data();
+      if (data.type === 'stamp' || data.type === 'admin_add') totalStamps++;
+      else if (data.type === 'free_redeemed' || data.type === 'goat_monthly') totalFree++;
+    });
+
+    await db.collection('staff').doc(staffId).update({ totalStamps, totalFree });
+    results.push({ name: staffDoc.data().name, totalStamps, totalFree });
+  }
+
+  return { success: true, migrated: results };
+});
