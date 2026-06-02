@@ -27,11 +27,25 @@ export default function CustomerLogin() {
   // Telefon → Firestore'dan email bul
   const findEmailByPhone = async (phoneNum) => {
     const clean = phoneNum.replace(/\D/g, '');
-    const formatted = '+90' + (clean.startsWith('0') ? clean.slice(1) : clean);
-    const q = query(collection(db, 'customers'), where('phone', '==', formatted));
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    return snap.docs[0].data().email;
+    const digits = clean.startsWith('0') ? clean.slice(1) : clean;
+    
+    // Birden fazla format dene
+    const formats = [
+      '+90' + digits,
+      '90' + digits,
+      '0' + digits,
+      digits,
+      '+90' + clean,
+    ];
+    
+    // Benzersiz formatları dene
+    const unique = [...new Set(formats)];
+    for (const fmt of unique) {
+      const q = query(collection(db, 'customers'), where('phone', '==', fmt));
+      const snap = await getDocs(q);
+      if (!snap.empty) return snap.docs[0].data().email;
+    }
+    return null;
   };
 
   // Giriş yap
