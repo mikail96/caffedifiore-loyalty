@@ -54,17 +54,22 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
 
   if ((cust.currentCard || 0) >= 7) throw new HttpsError('failed-precondition', 'Kart dolu');
 
-  // Minimum damga aralığı kontrolü (15dk)
+  // Minimum damga aralığı kontrolü (15dk) — hata olursa damga vermeyi engelleme
   if (!isAdmin) {
-    const recentSnap = await db.collection('stampLogs')
-      .where('customerId', '==', customerId).where('type', '==', 'stamp')
-      .orderBy('timestamp', 'desc').limit(1).get();
-    if (!recentSnap.empty) {
-      const lastTime = recentSnap.docs[0].data().timestamp?.toDate?.()?.getTime() || 0;
-      if (lastTime > 0 && (Date.now() - lastTime) < MIN_STAMP_INTERVAL_MS) {
-        const remaining = Math.ceil((MIN_STAMP_INTERVAL_MS - (Date.now() - lastTime)) / 60000);
-        throw new HttpsError('failed-precondition', `Son damgadan ${remaining} dk beklenmeli`);
+    try {
+      const recentSnap = await db.collection('stampLogs')
+        .where('customerId', '==', customerId).where('type', '==', 'stamp')
+        .orderBy('timestamp', 'desc').limit(1).get();
+      if (!recentSnap.empty) {
+        const lastTime = recentSnap.docs[0].data().timestamp?.toDate?.()?.getTime() || 0;
+        if (lastTime > 0 && (Date.now() - lastTime) < MIN_STAMP_INTERVAL_MS) {
+          const remaining = Math.ceil((MIN_STAMP_INTERVAL_MS - (Date.now() - lastTime)) / 60000);
+          throw new HttpsError('failed-precondition', `Son damgadan ${remaining} dk beklenmeli`);
+        }
       }
+    } catch (e) {
+      if (e instanceof HttpsError) throw e; // Aralık hatası → kullanıcıya göster
+      console.error('Damga aralığı kontrolü hatası (devam ediliyor):', e.message);
     }
   }
 
@@ -81,11 +86,14 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
       productCategory: productCategory || '', cardBefore: cust.currentCard || 0, cardAfter: nc,
       timestamp: FieldValue.serverTimestamp(),
     });
-    // Personel istatistik sayacı güncelle
-    if (!isAdmin && staffId) {
-      t.update(db.collection('staff').doc(staffId), { totalStamps: FieldValue.increment(1) });
-    }
   });
+
+  // Personel istatistik sayacı güncelle (ayrı — ana işlemi bloklamaz)
+  if (!isAdmin && staffId) {
+    try {
+      await db.collection('staff').doc(staffId).update({ totalStamps: FieldValue.increment(1) });
+    } catch (e) { console.error('Staff sayaç hatası:', e.message); }
+  }
 
   // Referans bonusu
   if (nt === 1 && cust.referredBy) {
@@ -138,10 +146,14 @@ exports.redeemFree = onCall({ region: "europe-west1" }, async (request) => {
       customerId, customerName: cust.name, staffId, staffName,
       branchId: branchId || '', type: 'free_redeemed', timestamp: FieldValue.serverTimestamp(),
     });
-    if (!isAdmin && staffId) {
-      t.update(db.collection('staff').doc(staffId), { totalFree: FieldValue.increment(1) });
-    }
   });
+
+  // Staff sayaç güncelle (ayrı — ana işlemi bloklamaz)
+  if (!isAdmin && staffId) {
+    try {
+      await db.collection('staff').doc(staffId).update({ totalFree: FieldValue.increment(1) });
+    } catch (e) { console.error('Staff sayaç hatası:', e.message); }
+  }
 
   return { success: true, currentCard: 0 };
 });
@@ -175,10 +187,14 @@ exports.redeemGoatMonthly = onCall({ region: "europe-west1" }, async (request) =
       customerId, customerName: cust.name, staffId, staffName,
       branchId: branchId || '', type: 'goat_monthly', timestamp: FieldValue.serverTimestamp(),
     });
-    if (!isAdmin && staffId) {
-      t.update(db.collection('staff').doc(staffId), { totalFree: FieldValue.increment(1) });
-    }
   });
+
+  // Staff sayaç güncelle (ayrı — ana işlemi bloklamaz)
+  if (!isAdmin && staffId) {
+    try {
+      await db.collection('staff').doc(staffId).update({ totalFree: FieldValue.increment(1) });
+    } catch (e) { console.error('Staff sayaç hatası:', e.message); }
+  }
 
   return { success: true };
 });
