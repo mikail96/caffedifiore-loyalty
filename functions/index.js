@@ -480,3 +480,4 @@ exports.deleteCustomer = onCall({ region: "europe-west1" }, async (request) => {
 
 // protectManualGoat kaldırıldı — manualGoat koruması calculateLevel fonksiyonunda zaten var
 // migrateStaffStats kaldırıldı — tek seferlik migration tamamlandı
+// billing fix 1781008991
