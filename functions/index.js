@@ -1,4 +1,4 @@
-const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
@@ -478,47 +478,5 @@ exports.deleteCustomer = onCall({ region: "europe-west1" }, async (request) => {
   return { success: true };
 });
 
-/**
- * GÜVENLİK AĞI: manualGoat olan müşterinin seviyesi değiştirilirse geri al
- * Bu trigger TÜM level değişikliklerini yakalar — hiçbir bug GOAT'ı düşüremez
- */
-exports.protectManualGoat = onDocumentUpdated(
-  { document: "customers/{customerId}", region: "europe-west1" },
-  async (event) => {
-    const before = event.data.before.data();
-    const after = event.data.after.data();
-
-    // manualGoat true ama level goat değilse → geri al
-    if (after.manualGoat === true && after.level !== 'goat') {
-      console.log(`GOAT koruması: ${after.name} (${event.params.customerId}) seviyesi ${after.level} → goat'a geri alındı`);
-      await event.data.after.ref.update({ level: 'goat' });
-    }
-  }
-);
-
-/**
- * Personel istatistiklerini stampLogs'tan hesaplayıp staff dokümanlarına yaz (tek seferlik migration)
- */
-exports.migrateStaffStats = onCall({ region: "europe-west1" }, async (request) => {
-  const staffSnap = await db.collection('staff').get();
-  const results = [];
-
-  for (const staffDoc of staffSnap.docs) {
-    const staffId = staffDoc.id;
-    const logsSnap = await db.collection('stampLogs').where('staffId', '==', staffId).get();
-    
-    let totalStamps = 0;
-    let totalFree = 0;
-    
-    logsSnap.docs.forEach(d => {
-      const data = d.data();
-      if (data.type === 'stamp' || data.type === 'admin_add') totalStamps++;
-      else if (data.type === 'free_redeemed' || data.type === 'goat_monthly') totalFree++;
-    });
-
-    await db.collection('staff').doc(staffId).update({ totalStamps, totalFree });
-    results.push({ name: staffDoc.data().name, totalStamps, totalFree });
-  }
-
-  return { success: true, migrated: results };
-});
+// protectManualGoat kaldırıldı — manualGoat koruması calculateLevel fonksiyonunda zaten var
+// migrateStaffStats kaldırıldı — tek seferlik migration tamamlandı
