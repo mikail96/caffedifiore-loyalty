@@ -1,6 +1,6 @@
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const functions = require("firebase-functions");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -26,12 +26,12 @@ function calculateLevel(totalStamps, currentLevel, manualGoat) {
 
 // Personel/admin doğrulama
 async function verifyStaff(staffId) {
-  if (!staffId) throw new HttpsError('unauthenticated', 'staffId gerekli');
+  if (!staffId) throw new functions.https.HttpsError('unauthenticated', 'staffId gerekli');
   const snap = await db.collection('staff').doc(staffId).get();
   if (!snap.exists || snap.data().status !== 'active') {
     // Admin kontrolü — settings/admin kontrol et
     const adminSnap = await db.collection('settings').doc('admin').get();
-    if (!adminSnap.exists) throw new HttpsError('permission-denied', 'Yetkisiz');
+    if (!adminSnap.exists) throw new functions.https.HttpsError('permission-denied', 'Yetkisiz');
     return { isAdmin: true, name: 'Admin' };
   }
   return { isAdmin: false, ...snap.data() };
@@ -40,19 +40,19 @@ async function verifyStaff(staffId) {
 /**
  * Damga Ekle (Callable)
  */
-exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
-  const { customerId, staffId, branchId, productCategory, isAdmin } = request.data;
-  if (!customerId || !staffId) throw new HttpsError('invalid-argument', 'customerId ve staffId gerekli');
+exports.addStamp = functions.region("europe-west1").https.onCall(async (data, context) => {
+  const { customerId, staffId, branchId, productCategory, isAdmin } = data;
+  if (!customerId || !staffId) throw new functions.https.HttpsError('invalid-argument', 'customerId ve staffId gerekli');
 
   const staff = isAdmin ? { isAdmin: true, name: 'Admin QR', branch: branchId || '' } : await verifyStaff(staffId);
 
   // Müşteriyi getir
   const custRef = db.collection('customers').doc(customerId);
   const custSnap = await custRef.get();
-  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  if (!custSnap.exists) throw new functions.https.HttpsError('not-found', 'Müşteri bulunamadı');
   const cust = custSnap.data();
 
-  if ((cust.currentCard || 0) >= 7) throw new HttpsError('failed-precondition', 'Kart dolu');
+  if ((cust.currentCard || 0) >= 7) throw new functions.https.HttpsError('failed-precondition', 'Kart dolu');
 
   // Minimum damga aralığı kontrolü (15dk) — hata olursa damga vermeyi engelleme
   if (!isAdmin) {
@@ -64,7 +64,7 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
         const lastTime = recentSnap.docs[0].data().timestamp?.toDate?.()?.getTime() || 0;
         if (lastTime > 0 && (Date.now() - lastTime) < MIN_STAMP_INTERVAL_MS) {
           const remaining = Math.ceil((MIN_STAMP_INTERVAL_MS - (Date.now() - lastTime)) / 60000);
-          throw new HttpsError('failed-precondition', `Son damgadan ${remaining} dk beklenmeli`);
+          throw new functions.https.HttpsError('failed-precondition', `Son damgadan ${remaining} dk beklenmeli`);
         }
       }
     } catch (e) {
@@ -120,18 +120,18 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
 /**
  * Sadakat Ücretsiz Kullan (Callable)
  */
-exports.redeemFree = onCall({ region: "europe-west1" }, async (request) => {
-  const { customerId, staffId, branchId, isAdmin } = request.data;
-  if (!customerId || !staffId) throw new HttpsError('invalid-argument', 'customerId ve staffId gerekli');
+exports.redeemFree = functions.region("europe-west1").https.onCall(async (data, context) => {
+  const { customerId, staffId, branchId, isAdmin } = data;
+  if (!customerId || !staffId) throw new functions.https.HttpsError('invalid-argument', 'customerId ve staffId gerekli');
 
   if (!isAdmin) await verifyStaff(staffId);
 
   const custRef = db.collection('customers').doc(customerId);
   const custSnap = await custRef.get();
-  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  if (!custSnap.exists) throw new functions.https.HttpsError('not-found', 'Müşteri bulunamadı');
   const cust = custSnap.data();
 
-  if ((cust.currentCard || 0) < 7) throw new HttpsError('failed-precondition', 'Kart dolmamış');
+  if ((cust.currentCard || 0) < 7) throw new functions.https.HttpsError('failed-precondition', 'Kart dolmamış');
 
   // Staff name'i transaction dışında al
   let staffName = 'Admin';
@@ -161,19 +161,19 @@ exports.redeemFree = onCall({ region: "europe-west1" }, async (request) => {
 /**
  * GOAT Aylık Ücretsiz Kullan (Callable)
  */
-exports.redeemGoatMonthly = onCall({ region: "europe-west1" }, async (request) => {
-  const { customerId, staffId, branchId, isAdmin } = request.data;
-  if (!customerId || !staffId) throw new HttpsError('invalid-argument', 'customerId ve staffId gerekli');
+exports.redeemGoatMonthly = functions.region("europe-west1").https.onCall(async (data, context) => {
+  const { customerId, staffId, branchId, isAdmin } = data;
+  if (!customerId || !staffId) throw new functions.https.HttpsError('invalid-argument', 'customerId ve staffId gerekli');
 
   if (!isAdmin) await verifyStaff(staffId);
 
   const custRef = db.collection('customers').doc(customerId);
   const custSnap = await custRef.get();
-  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  if (!custSnap.exists) throw new functions.https.HttpsError('not-found', 'Müşteri bulunamadı');
   const cust = custSnap.data();
 
-  if (cust.level !== 'goat') throw new HttpsError('failed-precondition', 'Müşteri GOAT değil');
-  if (cust.goatMonthlyUsed) throw new HttpsError('failed-precondition', 'GOAT aylık zaten kullanılmış');
+  if (cust.level !== 'goat') throw new functions.https.HttpsError('failed-precondition', 'Müşteri GOAT değil');
+  if (cust.goatMonthlyUsed) throw new functions.https.HttpsError('failed-precondition', 'GOAT aylık zaten kullanılmış');
 
   let staffName = 'Admin';
   if (!isAdmin && staffId) {
@@ -202,26 +202,26 @@ exports.redeemGoatMonthly = onCall({ region: "europe-west1" }, async (request) =
 /**
  * Admin Damga Düzenleme (+/-) (Callable)
  */
-exports.adminAdjustStamp = onCall({ region: "europe-west1" }, async (request) => {
-  const { customerId, action } = request.data; // action: 'add' veya 'remove'
-  if (!customerId || !action) throw new HttpsError('invalid-argument', 'customerId ve action gerekli');
+exports.adminAdjustStamp = functions.region("europe-west1").https.onCall(async (data, context) => {
+  const { customerId, action } = data; // action: 'add' veya 'remove'
+  if (!customerId || !action) throw new functions.https.HttpsError('invalid-argument', 'customerId ve action gerekli');
 
   const custRef = db.collection('customers').doc(customerId);
   const custSnap = await custRef.get();
-  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  if (!custSnap.exists) throw new functions.https.HttpsError('not-found', 'Müşteri bulunamadı');
   const cust = custSnap.data();
 
   let nc = cust.currentCard || 0;
   let nt = cust.totalStamps || 0;
 
   if (action === 'add') {
-    if (nc >= 7) throw new HttpsError('failed-precondition', 'Kart dolu');
+    if (nc >= 7) throw new functions.https.HttpsError('failed-precondition', 'Kart dolu');
     nc += 1; nt += 1;
   } else if (action === 'remove') {
-    if (nc <= 0) throw new HttpsError('failed-precondition', 'Damga 0');
+    if (nc <= 0) throw new functions.https.HttpsError('failed-precondition', 'Damga 0');
     nc -= 1; nt = Math.max(0, nt - 1);
   } else {
-    throw new HttpsError('invalid-argument', 'action add veya remove olmalı');
+    throw new functions.https.HttpsError('invalid-argument', 'action add veya remove olmalı');
   }
 
   const nl = calculateLevel(nt, cust.level, cust.manualGoat);
@@ -445,14 +445,14 @@ exports.cleanupOldLogs = onSchedule(
 /**
  * Müşteri Sil — Firestore + Firebase Auth (Callable)
  */
-exports.deleteCustomer = onCall({ region: "europe-west1" }, async (request) => {
-  const { customerId } = request.data;
-  if (!customerId) throw new HttpsError('invalid-argument', 'customerId gerekli');
+exports.deleteCustomer = functions.region("europe-west1").https.onCall(async (data, context) => {
+  const { customerId } = data;
+  if (!customerId) throw new functions.https.HttpsError('invalid-argument', 'customerId gerekli');
 
   // Firestore'dan müşteri verisini al
   const custRef = db.collection('customers').doc(customerId);
   const custSnap = await custRef.get();
-  if (!custSnap.exists) throw new HttpsError('not-found', 'Müşteri bulunamadı');
+  if (!custSnap.exists) throw new functions.https.HttpsError('not-found', 'Müşteri bulunamadı');
 
   // Firebase Auth'tan sil (customerId = Auth uid)
   try {
