@@ -81,11 +81,11 @@ export default function AdminPanel() {
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       endDate = new Date(now.getFullYear(), now.getMonth(), 1);
     } else {
-      // allTime → sadece ücretsiz ve goat loglarını çek (az sayıda)
+      // allTime → tüm logları çek
       try {
-        const freeSnap = await getDocs(query(collection(db, 'stampLogs'), where('type', 'in', ['free_redeemed', 'goat_monthly', 'referral_bonus'])));
-        setPeriodLogs(freeSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (e) { setPeriodLogs([]); }
+        const allSnap = await getDocs(query(collection(db, 'stampLogs'), orderBy('timestamp', 'desc')));
+        setPeriodLogs(allSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) { console.error('allTime log hatası:', e); setPeriodLogs(stampLogs); }
       setDashLoading(false); return;
     }
     try {
