@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { db } from '../../config/firebase.js';
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, setDoc, serverTimestamp, increment, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { COLORS, FONTS, STAMP_CATEGORIES, STAMP_CONFIG } from '../../config/constants.js';
 import { MENU_DATA } from '../../config/menu-data.js';
 import { loadMenu, groupByCategory, getCategories } from '../../services/menuService.js';
@@ -60,8 +60,35 @@ export default function AdminPanel() {
   const [sizes, setSizes] = useState({ hotSmall: '14oz', hotLarge: '16oz', coldSize: '16oz' });
   const [editingSizes, setEditingSizes] = useState(false);
   const [sizesForm, setSizesForm] = useState({});
+  const [dashPeriod, setDashPeriod] = useState('thisMonth');
+  const [periodLogs, setPeriodLogs] = useState(null);
+  const [dashLoading, setDashLoading] = useState(false);
 
   const msg = (m) => { setToast(m); setTimeout(() => setToast(null), 2500); };
+
+  // Dashboard dönem filtreleme
+  const loadPeriodLogs = async (period) => {
+    setDashLoading(true);
+    const now = new Date();
+    let startDate, endDate;
+    if (period === 'today') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    } else if (period === 'thisMonth') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    } else if (period === 'lastMonth') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else { setPeriodLogs(null); setDashLoading(false); return; } // allTime → use customer data
+    try {
+      const snap = await getDocs(query(collection(db, 'stampLogs'), where('timestamp', '>=', Timestamp.fromDate(startDate)), where('timestamp', '<', Timestamp.fromDate(endDate)), orderBy('timestamp', 'desc'), limit(1000)));
+      setPeriodLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) { console.error('Period log yükleme hatası:', e); setPeriodLogs(null); }
+    setDashLoading(false);
+  };
+
+  useEffect(() => { if (customers.length > 0) loadPeriodLogs(dashPeriod); }, [dashPeriod, customers.length]);
 
   useEffect(() => {
     const load = async () => {
@@ -140,12 +167,111 @@ export default function AdminPanel() {
 
       {/* ===== DASHBOARD ===== */}
       {tab === 'dash' && <div style={{ padding: '14px 16px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-          {[['Üye', customers.length, COLORS.fioreOrange], ['Damga', customers.reduce((s, c) => s + (c.totalStamps || 0), 0), COLORS.blue], ['Ücretsiz', stampLogs.filter(l => l.type === 'free_redeemed').length, COLORS.green], ['GOAT', goatCount, COLORS.gold]].map(([l, v, c]) => <C key={l}><div style={{ width: 8, height: 8, borderRadius: '50%', background: c, marginBottom: 10 }} /><div style={{ fontSize: 26, fontWeight: 700, color: c }}>{v}</div><div style={{ fontSize: 11, color: COLORS.gray, fontWeight: 500, marginTop: 2 }}>{l}</div></C>)}
+        {/* Dönem Filtresi */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }}>
+          {[['today','Bugün'],['thisMonth','Bu Ay'],['lastMonth','Geçen Ay'],['allTime','Tüm Zamanlar']].map(([k,l]) =>
+            <div key={k} onClick={() => setDashPeriod(k)} style={{ padding: '7px 14px', borderRadius: 50, fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', background: dashPeriod === k ? COLORS.fioreOrange : COLORS.warmGray, color: dashPeriod === k ? '#fff' : COLORS.grayDark }}>{l}</div>
+          )}
         </div>
-        <C><div style={{ fontSize: 15, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>En İyiler</div>
-          {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}><div style={{ width: 28, height: 28, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange }}>{c.name?.charAt(0)}</div><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
-        </C>
+
+        {dashLoading ? <div style={{ textAlign: 'center', padding: 20, color: COLORS.gray }}>Yükleniyor...</div> : <>
+          {/* Ana İstatistikler */}
+          {(() => {
+            const logs = periodLogs || [];
+            const isAllTime = dashPeriod === 'allTime';
+            const pStamps = isAllTime ? customers.reduce((s, c) => s + (c.totalStamps || 0), 0) : logs.filter(l => l.type === 'stamp' || l.type === 'admin_add').length;
+            const pFree = isAllTime ? logs.filter(l => l.type === 'free_redeemed').length : logs.filter(l => l.type === 'free_redeemed').length;
+            const pGoatFree = logs.filter(l => l.type === 'goat_monthly').length;
+            const pReferral = logs.filter(l => l.type === 'referral_bonus').length;
+            const newCusts = isAllTime ? customers.length : customers.filter(c => {
+              const reg = c.createdAt?.toDate?.() || c.createdAt;
+              if (!reg) return false;
+              const now = new Date();
+              if (dashPeriod === 'today') return reg >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              if (dashPeriod === 'thisMonth') return reg >= new Date(now.getFullYear(), now.getMonth(), 1);
+              if (dashPeriod === 'lastMonth') { const s = new Date(now.getFullYear(), now.getMonth()-1, 1); return reg >= s && reg < new Date(now.getFullYear(), now.getMonth(), 1); }
+              return true;
+            }).length;
+
+            // Personel performansı
+            const staffPerf = {};
+            logs.forEach(l => {
+              if ((l.type === 'stamp' || l.type === 'free_redeemed' || l.type === 'goat_monthly') && l.staffName && l.staffName !== 'Admin' && l.staffName !== 'Admin QR' && l.staffName !== 'system' && l.staffName !== 'Referans Bonus') {
+                if (!staffPerf[l.staffName]) staffPerf[l.staffName] = { stamps: 0, free: 0 };
+                if (l.type === 'stamp') staffPerf[l.staffName].stamps++;
+                else staffPerf[l.staffName].free++;
+              }
+            });
+            const staffRanking = Object.entries(staffPerf).sort((a,b) => (b[1].stamps+b[1].free) - (a[1].stamps+a[1].free));
+
+            // Popüler kategoriler
+            const cats = {};
+            logs.forEach(l => {
+              if (l.type === 'stamp' && l.productCategory) {
+                cats[l.productCategory] = (cats[l.productCategory] || 0) + 1;
+              }
+            });
+            const catRanking = Object.entries(cats).sort((a,b) => b[1] - a[1]);
+
+            return <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                <C><div style={{ fontSize: 10, color: COLORS.gray, marginBottom: 4 }}>Toplam Üye</div><div style={{ fontSize: 28, fontWeight: 700, color: COLORS.fioreOrange }}>{isAllTime ? customers.length : newCusts}</div><div style={{ fontSize: 9, color: COLORS.grayDark }}>{isAllTime ? 'tüm zamanlar' : 'yeni kayıt'}</div></C>
+                <C><div style={{ fontSize: 10, color: COLORS.gray, marginBottom: 4 }}>Damga</div><div style={{ fontSize: 28, fontWeight: 700, color: COLORS.blue }}>{pStamps}</div><div style={{ fontSize: 9, color: COLORS.grayDark }}>{isAllTime ? 'toplam verilen' : 'dönem içi'}</div></C>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+                <C><div style={{ fontSize: 10, color: COLORS.gray, marginBottom: 4 }}>Ücretsiz</div><div style={{ fontSize: 22, fontWeight: 700, color: COLORS.green }}>{pFree}</div></C>
+                <C><div style={{ fontSize: 10, color: COLORS.gray, marginBottom: 4 }}>GOAT Aylık</div><div style={{ fontSize: 22, fontWeight: 700, color: COLORS.gold }}>{pGoatFree}</div></C>
+                <C><div style={{ fontSize: 10, color: COLORS.gray, marginBottom: 4 }}>Referans</div><div style={{ fontSize: 22, fontWeight: 700, color: COLORS.blue }}>{pReferral}</div></C>
+              </div>
+
+              {/* GOAT Sayısı */}
+              <C style={{ marginBottom: 10, background: COLORS.goldBg, border: `1px solid ${COLORS.gold}30` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div><div style={{ fontSize: 10, color: COLORS.gold }}>GOAT Üyeler</div><div style={{ fontSize: 22, fontWeight: 700, color: COLORS.gold }}>{goatCount}</div></div>
+                  <div style={{ fontSize: 24 }}>🐐</div>
+                </div>
+              </C>
+
+              {/* Personel Performansı */}
+              {staffRanking.length > 0 && <C style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>Personel Performansı</div>
+                {staffRanking.map(([name, stats], i) => (
+                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: COLORS.fioreOrange }}>{i+1}</div>
+                    <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{name}</div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreOrange }}>{stats.stamps}</div><div style={{ fontSize: 8, color: COLORS.gray }}>damga</div></div>
+                      <div style={{ textAlign: 'center' }}><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.green }}>{stats.free}</div><div style={{ fontSize: 8, color: COLORS.gray }}>ücretsiz</div></div>
+                    </div>
+                  </div>
+                ))}
+              </C>}
+
+              {/* Popüler Kategoriler */}
+              {catRanking.length > 0 && <C style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 10 }}>Popüler Kategoriler</div>
+                {catRanking.slice(0, 5).map(([cat, count], i) => {
+                  const maxCount = catRanking[0][1];
+                  return <div key={cat} style={{ marginBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 12, color: COLORS.fioreBeyaz, fontWeight: 500 }}>{cat}</span>
+                      <span style={{ fontSize: 12, color: COLORS.fioreOrange, fontWeight: 700 }}>{count}</span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 3, background: COLORS.warmGray }}>
+                      <div style={{ height: 6, borderRadius: 3, background: COLORS.fioreOrange, width: `${(count/maxCount)*100}%`, transition: 'width 0.3s' }} />
+                    </div>
+                  </div>;
+                })}
+              </C>}
+
+              {/* En İyiler */}
+              <C style={{ marginBottom: 10 }}><div style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreBeyaz, marginBottom: 12 }}>En İyiler</div>
+                {customers.slice(0, 5).map((c, i) => <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: i ? `1px solid ${COLORS.warmGray}` : 'none' }}><div style={{ width: 28, height: 28, borderRadius: '50%', background: c.level === 'goat' ? COLORS.goldBg : COLORS.orangeGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange }}>{c.name?.charAt(0)}</div><div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: COLORS.fioreBeyaz }}>{c.name} </span><B text={c.level === 'goat' ? 'GOAT' : c.level === 'mudavim' ? 'MÜDAVİM' : 'MİSAFİR'} color={c.level === 'goat' ? COLORS.gold : COLORS.fioreOrange} /></div><span style={{ fontSize: 13, fontWeight: 700, color: COLORS.fioreOrange }}>{c.totalStamps || 0}</span></div>)}
+              </C>
+            </>;
+          })()}
+        </>}
+
         {/* Admin Ayarları */}
         <C style={{ marginTop: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: adminEdit ? 12 : 0 }}>
