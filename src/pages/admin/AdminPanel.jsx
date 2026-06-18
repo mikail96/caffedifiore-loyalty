@@ -80,7 +80,14 @@ export default function AdminPanel() {
     } else if (period === 'lastMonth') {
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       endDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    } else { setPeriodLogs(null); setDashLoading(false); return; } // allTime → use customer data
+    } else {
+      // allTime → sadece ücretsiz ve goat loglarını çek (az sayıda)
+      try {
+        const freeSnap = await getDocs(query(collection(db, 'stampLogs'), where('type', 'in', ['free_redeemed', 'goat_monthly', 'referral_bonus'])));
+        setPeriodLogs(freeSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) { setPeriodLogs([]); }
+      setDashLoading(false); return;
+    }
     try {
       const snap = await getDocs(query(collection(db, 'stampLogs'), where('timestamp', '>=', Timestamp.fromDate(startDate)), where('timestamp', '<', Timestamp.fromDate(endDate)), orderBy('timestamp', 'desc'), limit(1000)));
       setPeriodLogs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
