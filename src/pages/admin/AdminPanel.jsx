@@ -81,10 +81,12 @@ export default function AdminPanel() {
       startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       endDate = new Date(now.getFullYear(), now.getMonth(), 1);
     } else {
-      // allTime → tüm logları çek
+      // allTime → tüm logları çek (orderBy yok, timestamp olmayan kayıtlar da gelsin)
       try {
-        const allSnap = await getDocs(query(collection(db, 'stampLogs'), orderBy('timestamp', 'desc')));
-        setPeriodLogs(allSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const allSnap = await getDocs(collection(db, 'stampLogs'));
+        const allLogs = allSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log('allTime logs yüklendi:', allLogs.length, 'free:', allLogs.filter(l => l.type === 'free_redeemed').length);
+        setPeriodLogs(allLogs);
       } catch (e) { console.error('allTime log hatası:', e); setPeriodLogs(stampLogs); }
       setDashLoading(false); return;
     }
