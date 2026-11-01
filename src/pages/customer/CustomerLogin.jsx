@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../../config/firebase.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where, updateDoc, increment, getDocsFromServer } from 'firebase/firestore';
 import { COLORS, FONTS } from '../../config/constants.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
@@ -38,13 +38,14 @@ export default function CustomerLogin() {
       '+90' + clean,
     ];
     
-    // Benzersiz formatları dene
+    // Tek sorguda tüm formatları dene, cache'ten değil sunucudan oku
+    // (zayıf ağda getDocs boş cache döndürüp "hesap bulunamadı" diyordu)
     const unique = [...new Set(formats)];
-    for (const fmt of unique) {
-      const q = query(collection(db, 'customers'), where('phone', '==', fmt));
-      const snap = await getDocs(q);
-      if (!snap.empty) return snap.docs[0].data().email;
-    }
+    const q = query(collection(db, 'customers'), where('phone', 'in', unique));
+    let snap;
+    try { snap = await getDocsFromServer(q); }
+    catch (e) { await new Promise(r => setTimeout(r, 1500)); snap = await getDocsFromServer(q); }
+    if (!snap.empty) return snap.docs[0].data().email;
     return null;
   };
 
@@ -64,8 +65,9 @@ export default function CustomerLogin() {
     if (password.length < 4) { setError('Şifrenizi girin'); return; }
     setLoading(true); setError('');
 
-    // 15 saniye timeout — yavaş ağda sonsuz beklemeyi önle
-    const timeout = setTimeout(() => { setLoading(false); setError('Bağlantı zaman aşımına uğradı. Tekrar deneyin.'); }, 15000);
+    // 30 sn timeout — işlem hâlâ sürüyorsa sadece uyar, sonradan başarılı olursa yine içeri alır
+    let finished = false;
+    const timeout = setTimeout(() => { if (!finished) setError('Bağlantı yavaş, lütfen bekleyin...'); }, 30000);
 
     let customerEmail = null;
     try {
@@ -77,10 +79,10 @@ export default function CustomerLogin() {
       try { await updateDoc(doc(db, 'customers', auth.currentUser.uid), { sessionId: sid }); } catch(e) {}
       sessionStorage.setItem('cdf_session', sid);
       await refreshUser();
-      clearTimeout(timeout);
+      finished = true; clearTimeout(timeout);
       navigate('/musteri');
     } catch (err) {
-      clearTimeout(timeout);
+      finished = true; clearTimeout(timeout);
       const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
       if (newAttempts >= 5) {
@@ -91,7 +93,7 @@ export default function CustomerLogin() {
         setError(`Şifre hatalı. (${5 - newAttempts} deneme hakkınız kaldı)`);
       } else if (err.code === 'auth/too-many-requests') {
         setError('Çok fazla deneme. Biraz bekleyin.');
-      } else if (err.code === 'auth/network-request-failed') {
+      } else if (err.code === 'auth/network-request-failed' || err.code === 'unavailable') {
         setError('İnternet bağlantınızı kontrol edin.');
       } else {
         setError('Giriş hatası. Bilgilerinizi kontrol edin.');

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCTPyKP1k4BoFb8piun55bBDFDaUVnGYWM",
@@ -13,5 +13,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Mobil ağlarda (özellikle iOS Safari + hücresel) WebChannel takılmasını önlemek için long polling
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 export default app;
