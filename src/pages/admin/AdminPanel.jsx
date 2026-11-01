@@ -512,11 +512,18 @@ export default function AdminPanel() {
               <Inp label="Kullanıcı Adı" value={editForm.username || ''} onChange={v => setEditForm(p => ({ ...p, username: v }))} />
               <Inp label="Yeni PIN (boş bırakırsan değişmez)" value={editForm.pin || ''} onChange={v => { if (/^\d{0,4}$/.test(v)) setEditForm(p => ({ ...p, pin: v })); }} />
               <div style={{ marginBottom: 8 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Rol</div><div style={{ display: 'flex', gap: 5 }}>{['Barista', 'Part-time', 'Müdür'].map(r => <div key={r} onClick={() => setEditForm(p => ({ ...p, role: r }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.role === r ? COLORS.blue : COLORS.warmGray, color: editForm.role === r ? COLORS.fioreBeyaz : COLORS.grayDark }}>{r}</div>)}</div></div>
-              <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Şube</div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{branchKeys.map(b => <div key={b} onClick={() => setEditForm(p => ({ ...p, branch: b }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.branch === b ? COLORS.fioreOrange : COLORS.warmGray, color: editForm.branch === b ? COLORS.fioreBeyaz : COLORS.grayDark }}>{branches[b]?.shortName || branches[b]?.name}</div>)}</div></div>
+              <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Ana Şube</div><div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{branchKeys.map(b => <div key={b} onClick={() => setEditForm(p => ({ ...p, branch: b }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.branch === b ? COLORS.fioreOrange : COLORS.warmGray, color: editForm.branch === b ? COLORS.fioreBeyaz : COLORS.grayDark }}>{branches[b]?.shortName || branches[b]?.name}</div>)}</div></div>
+              <div style={{ marginBottom: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, marginBottom: 4 }}>Ek Şube Yetkisi</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  <div onClick={() => setEditForm(p => ({ ...p, allBranches: !p.allBranches }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: editForm.allBranches ? COLORS.green : COLORS.warmGray, color: editForm.allBranches ? COLORS.fioreBeyaz : COLORS.grayDark }}>Tüm Şubeler</div>
+                  {!editForm.allBranches && branchKeys.filter(b => b !== editForm.branch).map(b => { const on = (editForm.branches || []).includes(b); return <div key={b} onClick={() => setEditForm(p => ({ ...p, branches: on ? (p.branches || []).filter(x => x !== b) : [...(p.branches || []), b] }))} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: on ? COLORS.blue : COLORS.warmGray, color: on ? COLORS.fioreBeyaz : COLORS.grayDark }}>+ {branches[b]?.shortName || branches[b]?.name}</div>; })}
+                </div>
+                <div style={{ fontSize: 10, color: COLORS.gray, marginTop: 4 }}>Seçilirse personel bu şubelerde de damga verebilir (konuma göre otomatik).</div>
+              </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <div style={{ flex: 1 }}><Bt onClick={async () => {
                   try {
-                    const updates = { username: editForm.username, role: editForm.role, branch: editForm.branch };
+                    const updates = { username: editForm.username, role: editForm.role, branch: editForm.branch, allBranches: !!editForm.allBranches, branches: (editForm.branches || []).filter(b => b !== editForm.branch && branches[b]) };
                     // PIN değiştiyse hashle (4 haneli yeni PIN girildiyse)
                     if (editForm.pin && editForm.pin.length === 4 && /^\d{4}$/.test(editForm.pin)) {
                       updates.pin = await hashPin(editForm.pin);
@@ -530,7 +537,7 @@ export default function AdminPanel() {
               </div>
             </div> : <>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>{st.name}</div><div style={{ fontSize: 12, color: COLORS.blue }}>@{st.username} · {st.role}</div></div>
+                <div><div style={{ fontSize: 14, fontWeight: 700, color: COLORS.fioreBeyaz }}>{st.name}</div><div style={{ fontSize: 12, color: COLORS.blue }}>@{st.username} · {st.role}</div>{(st.allBranches || (st.branches || []).length > 0) && <div style={{ fontSize: 11, color: COLORS.green, fontWeight: 600, marginTop: 2 }}>{st.allBranches ? 'Tüm şubelerde yetkili' : '+ ' + st.branches.map(b => branches[b]?.shortName || branches[b]?.name || b).join(', ')}</div>}</div>
                 <B text={st.status === 'active' ? 'Aktif' : 'Pasif'} color={st.status === 'active' ? COLORS.green : COLORS.gray} />
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
@@ -546,7 +553,7 @@ export default function AdminPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: `1px solid ${COLORS.grayLight}` }}>
                 <div style={{ fontSize: 12, color: COLORS.grayDark }}>PIN: <span style={{ fontWeight: 700, background: COLORS.warmGray, color: COLORS.fioreBeyaz, padding: '3px 10px', borderRadius: 6, letterSpacing: 3 }}>{st.pin.length > 4 ? '••••' : st.pin}</span></div>
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <div onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: '', role: st.role, branch: st.branch }); }} style={{ width: 36, height: 36, borderRadius: 10, background: COLORS.blueBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <div onClick={() => { setEditingStaff(st.id); setEditForm({ username: st.username, pin: '', role: st.role, branch: st.branch, allBranches: !!st.allBranches, branches: st.branches || [] }); }} style={{ width: 36, height: 36, borderRadius: 10, background: COLORS.blueBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={COLORS.blue} strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </div>
                   <div onClick={async () => {

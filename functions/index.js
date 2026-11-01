@@ -37,6 +37,15 @@ async function verifyStaff(staffId) {
   return { isAdmin: false, ...snap.data() };
 }
 
+// Personelin işlem yaptığı şubeyi belirle: istenen şubeye yetkisi varsa onu, yoksa ana şubesini kullan
+function resolveBranch(staff, requested) {
+  if (!staff || staff.isAdmin) return requested || (staff && staff.branch) || '';
+  if (!requested) return staff.branch || '';
+  if (staff.allBranches) return requested;
+  const allowed = [staff.branch, ...(staff.branches || [])];
+  return allowed.includes(requested) ? requested : (staff.branch || '');
+}
+
 /**
  * Damga Ekle (Callable)
  */
@@ -82,7 +91,7 @@ exports.addStamp = onCall({ region: "europe-west1" }, async (request) => {
     t.update(custRef, { currentCard: nc, totalStamps: nt, level: nl });
     t.create(db.collection('stampLogs').doc(), {
       customerId, customerName: cust.name, staffId, staffName: staff.name,
-      branchId: staff.branch || branchId || '', type: isAdmin ? 'admin_add' : 'stamp',
+      branchId: resolveBranch(staff, branchId), type: isAdmin ? 'admin_add' : 'stamp',
       productCategory: productCategory || '', cardBefore: cust.currentCard || 0, cardAfter: nc,
       timestamp: FieldValue.serverTimestamp(),
     });

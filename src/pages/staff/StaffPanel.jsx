@@ -32,7 +32,10 @@ export default function StaffPanel() {
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState('');
   const scannerRef = useRef(null);
-  const branchName = userData?.branch === 'gokkusagi' ? 'Gökkuşağı AVM' : 'Forum Kampüs AVM';
+  // Aktif şube: çok şubeli personelde konuma göre en yakın yetkili şube seçilir
+  const [activeBranch, setActiveBranch] = useState(userData?.branch);
+  const [activeBranchName, setActiveBranchName] = useState(userData?.branch === 'gokkusagi' ? 'Gökkuşağı AVM' : userData?.branch === 'maginn' ? 'MagInn' : 'Forum Kampüs AVM');
+  const branchName = activeBranchName;
   const msg = (m, t = 'success') => { setToast(m); setTt(t); setTimeout(() => setToast(null), 2500); };
 
   // Kampanyaları yükle + bugünkü istatistikleri çek
@@ -55,22 +58,43 @@ export default function StaffPanel() {
     }
   }, []);
 
-  // GPS kontrolü
+  // GPS kontrolü — personelin yetkili olduğu tüm şubeler arasından en yakını bulunur
   const checkGPS = async () => {
     setGpsChecking(true);
     try {
-      const branchDoc = await getDoc(doc(db, 'branches', userData?.branch));
-      const branchData = branchDoc.data();
-      if (!branchData?.lat || !branchData?.lng) {
-        setGps(true);
-        setGpsDistance(null);
-        setGpsChecking(false);
+      // Güncel yetkileri staff dokümanından oku (admin değiştirdiyse çıkış-giriş gerekmesin)
+      let staffData = userData || {};
+      try { const sSnap = await getDoc(doc(db, 'staff', userData.id)); if (sSnap.exists()) staffData = { ...staffData, ...sSnap.data() }; } catch (e) {}
+
+      let allowed = [];
+      if (staffData.allBranches) {
+        const bSnap = await getDocs(collection(db, 'branches'));
+        allowed = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } else {
+        const ids = [...new Set([staffData.branch, ...(staffData.branches || [])].filter(Boolean))];
+        const docs = await Promise.all(ids.map(id => getDoc(doc(db, 'branches', id))));
+        allowed = docs.filter(d => d.exists()).map(d => ({ id: d.id, ...d.data() }));
+      }
+      const label = (b) => b?.shortName || b?.name || '';
+      const primary = allowed.find(b => b.id === staffData.branch) || allowed[0];
+      const withCoords = allowed.filter(b => b.lat && b.lng);
+
+      // Koordinatı olmayan tek şubeli personel: eski davranış (izin ver)
+      if (withCoords.length === 0) {
+        if (primary) { setActiveBranch(primary.id); setActiveBranchName(label(primary)); }
+        setGps(true); setGpsDistance(null); setGpsChecking(false);
         return;
       }
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, branchData.lat, branchData.lng);
-          const distM = Math.round(dist);
+          let best = null, bestDist = Infinity;
+          withCoords.forEach(b => {
+            const d = calculateDistance(pos.coords.latitude, pos.coords.longitude, b.lat, b.lng);
+            if (d < bestDist) { bestDist = d; best = b; }
+          });
+          const distM = Math.round(bestDist);
+          setActiveBranch(best.id);
+          setActiveBranchName(label(best));
           setGpsDistance(distM);
           setGps(distM <= STAMP_CONFIG.gpsRadiusMeters);
           setGpsChecking(false);
@@ -149,7 +173,7 @@ export default function StaffPanel() {
     if (!sel || !gps || (sel.currentCard || 0) >= 7 || busy) return;
     setBusy(true);
     try {
-      const result = await addStamp({ customerId: sel.id, staffId: userData.id, branchId: userData.branch, productCategory: cat });
+      const result = await addStamp({ customerId: sel.id, staffId: userData.id, branchId: activeBranch, productCategory: cat });
       const updated = { ...sel, currentCard: result.currentCard, totalStamps: result.totalStamps, level: result.level };
       setSel(updated);
       setTStamp(p => p + 1);
@@ -168,7 +192,7 @@ export default function StaffPanel() {
     if (!sel || (sel.currentCard || 0) < 7 || busy) return;
     setBusy(true);
     try {
-      await redeemFree({ customerId: sel.id, staffId: userData.id, branchId: userData.branch });
+      await redeemFree({ customerId: sel.id, staffId: userData.id, branchId: activeBranch });
       setSel({ ...sel, currentCard: 0 }); setTFree(p => p + 1);
       setLogs(p => [{ cn: sel.name, type: 'free', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
       msg('Ücretsiz verildi! Kart 0/7');
@@ -180,7 +204,7 @@ export default function StaffPanel() {
     if (!sel || sel.level !== 'goat' || sel.goatMonthlyUsed || busy) return;
     setBusy(true);
     try {
-      await redeemGoatMonthly({ customerId: sel.id, staffId: userData.id, branchId: userData.branch });
+      await redeemGoatMonthly({ customerId: sel.id, staffId: userData.id, branchId: activeBranch });
       setSel({ ...sel, goatMonthlyUsed: true });
       setLogs(p => [{ cn: sel.name, type: 'goat', time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }, ...p]);
       msg('GOAT aylık ücretsiz verildi!');
